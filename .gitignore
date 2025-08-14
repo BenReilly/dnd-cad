@@ -28,3 +28,4 @@ src/xxx.App.tsx
 src/assets/react.svg
 src/dndcadjson.js
 src/contexts/charOutput.js
+src/utils/firebase.config.js

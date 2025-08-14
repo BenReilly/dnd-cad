@@ -22,10 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-src/char-data.js
 src/xxx.App.css
 src/xxx.App.tsx
 src/assets/react.svg
-src/dndcadjson.js
 src/contexts/charOutput.js
 src/utils/firebase.config.js

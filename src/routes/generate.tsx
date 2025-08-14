@@ -15,10 +15,10 @@ const Generate = () => {
 
   useEffect(() => {
     if (Races?.length > 0) {
-      setRace(randomArrayElement(Races).race_name);
+      setRace(randomArrayElement(Races, 'race_name'));
     }
     if (Classes?.length > 0) {
-      setClassType(randomArrayElement(Classes).class_name);
+      setClassType(randomArrayElement(Classes, 'class_name'));
     }
     setStatSet(generateStatSet());
   }, [Races, Classes]);

@@ -20,7 +20,7 @@ const DndcadHeader = () => {
   return (
     <DndcadHeaderDiv>
       <DndcadHeaderID>
-        <p>Welcome{currentUser ? ` ${currentUser.displayName}` : ''}</p>
+        <p>Welcome{currentUser ? ` ${currentUser.uname}` : ' Guest'}</p>
         <p>
           <Button onClick={handleBtnClick}>
             Sign {currentUser ? 'Out' : 'In'}

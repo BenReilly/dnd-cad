@@ -27,3 +27,5 @@ src/xxx.App.tsx
 src/assets/react.svg
 src/contexts/charOutput.js
 src/utils/firebase.config.js
+xxx.setupTests.js
+xxx.vitest.config.js

@@ -3,15 +3,9 @@ import DndcadHeader from './header.component';
 import { describe, it, expect } from 'vitest';
 import { UserContext } from '../../contexts/user.context';
 import { UserData } from '../../types/User.Types.js';
+import { mockedUserData } from '../../utils/mockedTestData.js';
 
 describe('DndcadHeader', () => {
-  const mockedUser = {
-    uname: 'Foo',
-    email: 'foo@foo.com',
-    create_date: new Date(),
-    uid: '12312312',
-  };
-
   const renderWithUser = (user: UserData | null) => {
     return render(
       <UserContext.Provider
@@ -28,7 +22,7 @@ describe('DndcadHeader', () => {
   });
 
   it('renders the welcome with name', () => {
-    renderWithUser(mockedUser);
+    renderWithUser(mockedUserData);
     expect(screen.getByText('Welcome Foo')).toBeInTheDocument();
   });
 
@@ -39,7 +33,7 @@ describe('DndcadHeader', () => {
     ).toBeInTheDocument();
   });
   it('renders a log out button if there is a user', () => {
-    renderWithUser(mockedUser);
+    renderWithUser(mockedUserData);
     expect(
       screen.getByRole('button', { name: /sign out/i }),
     ).toBeInTheDocument();

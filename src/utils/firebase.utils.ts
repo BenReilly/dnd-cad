@@ -48,7 +48,7 @@ export const db = getFirestore();
 
 export const createUserDoc = async (
   userAuth: User,
-): Promise<DocumentReference<UserData>> => {
+): Promise<DocumentReference<UserData> | null> => {
   const userDocRef = doc(
     db,
     'users',
@@ -67,6 +67,7 @@ export const createUserDoc = async (
       });
     } catch (err) {
       console.log('Could not create user', err);
+      return null;
     }
   }
   return userDocRef;

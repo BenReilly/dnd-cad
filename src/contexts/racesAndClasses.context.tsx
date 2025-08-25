@@ -21,6 +21,7 @@ export const RaceClassProvider = ({ children }: PropsWithChildren) => {
     const fetchRacesAndClasses = async () => {
       const fetchedRaces = await getRaces();
       const fetchedClasses = await getClasses();
+
       setRaces(fetchedRaces);
       setClasses(fetchedClasses);
     };

@@ -5,6 +5,7 @@ import {
   generateStatSet,
   randomArrayElement,
 } from '../utils/generatestats.utils.js';
+import CharEntry from '../components/home/charEntry/charEntry.component';
 
 const Generate = () => {
   const { Races, Classes } = useContext(RaceClassContext);
@@ -37,6 +38,7 @@ const Generate = () => {
           </span>
         ))}
       </p>
+      <CharEntry />
     </div>
   );
 };

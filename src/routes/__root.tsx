@@ -12,17 +12,24 @@ const headerStyle = {
   height: 'auto',
 };
 const contentStyle = {
-  backgroundColor: 'transparent',
-  padding: '25px 50px',
+  width: '100%',
+  maxWidth: '100%',
+  padding: '25px',
   border: '2px solid #f2f1f1',
-  margin: '0 25px',
   borderRadius: '15px',
+  boxSizing: 'border-box' as const,
+};
+const pageStyle = {
+  maxWidth: 1200,
+  width: '100%',
+  margin: '0 auto',
+  padding: '0 24px',
 };
 
 export const Route = createRootRoute({
   component: () => (
-    <Container style={transparentStyle} disableGutters>
-      <Container style={headerStyle} disableGutters>
+    <Container sx={{ ...transparentStyle, ...pageStyle }} disableGutters>
+      <Container sx={headerStyle} disableGutters>
         <DndcadHeader />
         <DndcadTopMenu>
           <Link to="/">Home</Link>
@@ -30,7 +37,7 @@ export const Route = createRootRoute({
           <Link to="/generate">Generate</Link>
         </DndcadTopMenu>
       </Container>
-      <Container className="dndcad-nav" style={contentStyle}>
+      <Container sx={contentStyle}>
         <Outlet />
         <TanStackRouterDevtools />
       </Container>

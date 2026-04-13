@@ -1,11 +1,30 @@
 import React from 'react';
 import { TextField, TextFieldProps } from '@mui/material';
 
-const CharSheetTextField: React.FC<TextFieldProps> = (props) => {
+interface CharSheetTextFieldProps
+  extends Omit<TextFieldProps, 'size'> {
+  fieldSize?: 'full' | 'large' | 'medium' | 'small' | 'tiny';
+}
+
+const sizeMap = {
+  full: '100%',
+  large: '500px',
+  medium: '300px',
+  small: '175px',
+  tiny: '50px',
+};
+
+const CharSheetTextField: React.FC<CharSheetTextFieldProps> = ({
+  fieldSize = 'medium',
+  ...props
+}: CharSheetTextFieldProps) => {
+  const width = sizeMap[fieldSize];
+
   return (
     <TextField
-      {...props}
+      {...(props as TextFieldProps)}
       sx={{
+        width,
         '& .MuiOutlinedInput-notchedOutline': {
           borderColor: '#ccc',
         },

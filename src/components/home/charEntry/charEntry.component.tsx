@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import CharSheetTextField from '../../library/CharSheetTextField';
+import CharSheetTextField from '../../library/textField/CharSheetTextField';
 
 const CharEntry = () => {
   const [name, setName] = useState('');

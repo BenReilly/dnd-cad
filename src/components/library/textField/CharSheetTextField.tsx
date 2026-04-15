@@ -11,14 +11,39 @@ const sizeMap = {
   large: '500px',
   medium: '300px',
   small: '175px',
-  tiny: '50px',
+  tiny: '100px',
 };
 
 const CharSheetTextField: React.FC<CharSheetTextFieldProps> = ({
   fieldSize = 'medium',
+  slotProps: userSlotProps,
   ...props
-}: CharSheetTextFieldProps) => {
+}: CharSheetTextFieldProps & { slotProps?: TextFieldProps['slotProps'] }) => {
   const width = sizeMap[fieldSize];
+
+  const mergedSlotProps = {
+    ...userSlotProps,
+    input: {
+      ...(userSlotProps?.input ?? {}),
+      style: {
+        fontFamily: '"Quintessential", serif',
+        fontWeight: 400,
+        fontStyle: 'normal',
+        color: '#ccc',
+        ...(userSlotProps?.input as any)?.style,
+      },
+    },
+    inputLabel: {
+      ...(userSlotProps?.inputLabel ?? {}),
+      style: {
+        fontFamily: '"Quintessential", serif',
+        fontWeight: 400,
+        fontStyle: 'normal',
+        color: '#ccc',
+        ...(userSlotProps?.inputLabel as any)?.style,
+      },
+    },
+  };
 
   return (
     <TextField
@@ -35,24 +60,7 @@ const CharSheetTextField: React.FC<CharSheetTextFieldProps> = ({
           borderColor: '#ccc',
         },
       }}
-      slotProps={{
-        input: {
-          style: {
-            fontFamily: '"Quintessential", serif',
-            fontWeight: 400,
-            fontStyle: 'normal',
-            color: '#ccc',
-          },
-        },
-        inputLabel: {
-          style: {
-            fontFamily: '"Quintessential", serif',
-            fontWeight: 400,
-            fontStyle: 'normal',
-            color: '#ccc',
-          },
-        },
-      }}
+      slotProps={mergedSlotProps}
     />
   );
 };

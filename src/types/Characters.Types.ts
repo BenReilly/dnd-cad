@@ -147,7 +147,7 @@ export type Character = {
   equipment?: Equipment;
   description?: Description;
   alliesAndAssociations?: Ally;
-  additionalFeatures: [string];
+  additionalFeatures?: [string];
   treasure?: [string];
   spells?: SpellSheet;
 };

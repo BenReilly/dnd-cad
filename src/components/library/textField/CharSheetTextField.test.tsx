@@ -56,7 +56,7 @@ describe('CharSheetTextField', () => {
     expect(styles.width).toBe('175px');
   });
 
-  it('renders with fieldSize="tiny" (50px width)', () => {
+  it('renders with fieldSize="tiny" (100px width)', () => {
     const { container } = render(
       <CharSheetTextField
         label="Test"
@@ -66,7 +66,7 @@ describe('CharSheetTextField', () => {
     );
     const textField = container.querySelector('[data-testid="test-field"]');
     const styles = window.getComputedStyle(textField!);
-    expect(styles.width).toBe('50px');
+    expect(styles.width).toBe('100px');
   });
 
   it('renders with custom color applied to input', () => {
@@ -119,5 +119,3 @@ describe('CharSheetTextField', () => {
     expect(input).toBeDisabled();
   });
 });
-
-

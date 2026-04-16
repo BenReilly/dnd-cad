@@ -1,5 +1,6 @@
 import { useContext, useState, ChangeEvent, FormEvent, Fragment } from 'react';
 import { Button } from '@mui/material';
+import { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import CharSheetTextField from '../../library/textField/CharSheetTextField';
 import CharSheetSelect from '../../library/select/CharSheetSelect';
@@ -49,8 +50,8 @@ const CharEntry = () => {
   const selectedRace = Races.find((raceItem) => raceItem.race_name === raceSelection);
   const subraceOptions = selectedRace?.subraces?.map((subrace) => ({ value: subrace, label: subrace })) || [];
 
-  const handleRaceChange = (event: any) => {
-    const value = event.target.value as string;
+  const handleRaceChange = (event: SelectChangeEvent<unknown>) => {
+    const value = String(event.target.value);
     setRaceSelection(value);
     setOtherRaceText('');
     setOtherRaceTouched(false);
@@ -72,8 +73,8 @@ const CharEntry = () => {
     }
   };
 
-  const handleSubraceChange = (event: any) => {
-    const value = event.target.value as string;
+  const handleSubraceChange = (event: SelectChangeEvent<unknown>) => {
+    const value = String(event.target.value);
     setSubraceSelection(value);
     setOtherSubraceText('');
     setOtherSubraceTouched(false);
@@ -117,8 +118,8 @@ const CharEntry = () => {
     );
   };
 
-  const handleClassChange = (index: number, event: any) => {
-    const value = event.target.value as string;
+  const handleClassChange = (index: number, event: SelectChangeEvent<unknown>) => {
+    const value = String(event.target.value);
     setClassDescriptionValue(index, { classSelection: value, touched: true });
   };
 
@@ -129,8 +130,8 @@ const CharEntry = () => {
     setClassDescriptionValue(index, { otherClassText: event.target.value, otherTouched: true });
   };
 
-  const handleSubclassChange = (index: number, event: any) => {
-    const value = event.target.value as string;
+  const handleSubclassChange = (index: number, event: SelectChangeEvent<unknown>) => {
+    const value = String(event.target.value);
     setClassDescriptionValue(index, { subclass: value, subclassTouched: true });
   };
 

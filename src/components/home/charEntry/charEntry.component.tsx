@@ -6,13 +6,19 @@ import CharSheetSelect from '../../library/select/CharSheetSelect';
 import { RaceClassContext } from '../../../contexts/racesAndClasses.context';
 
 const CharEntry = () => {
-  const { Classes } = useContext(RaceClassContext);
+  const { Classes, Races } = useContext(RaceClassContext);
   const charId = 'someIdHere';
   const user_doc = 'eje';
-  const race = 'human';
   const [name, setName] = useState('');
   const [nameTouched, setNameTouched] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [raceSelection, setRaceSelection] = useState('');
+  const [raceTouched, setRaceTouched] = useState(false);
+  const [otherRaceText, setOtherRaceText] = useState('');
+  const [otherRaceTouched, setOtherRaceTouched] = useState(false);
+  const [subraceSelection, setSubraceSelection] = useState('');
+  const [otherSubraceText, setOtherSubraceText] = useState('');
+  const [otherSubraceTouched, setOtherSubraceTouched] = useState(false);
   const [classDescriptions, setClassDescriptions] = useState([
     { classSelection: '', otherClassText: '', level: '', subclass: '', subclassOther: '', touched: false, otherTouched: false, subclassTouched: false, otherSubclassTouched: false },
   ]);
@@ -33,6 +39,50 @@ const CharEntry = () => {
         setNameError('');
       }
     }
+  };
+
+  const raceOptions = Races.map((raceItem) => ({
+    value: raceItem.race_name,
+    label: raceItem.race_name,
+  })).sort((a, b) => a.label.localeCompare(b.label));
+
+  const selectedRace = Races.find((raceItem) => raceItem.race_name === raceSelection);
+  const subraceOptions = selectedRace?.subraces?.map((subrace) => ({ value: subrace, label: subrace })) || [];
+
+  const handleRaceChange = (event: any) => {
+    const value = event.target.value as string;
+    setRaceSelection(value);
+    setOtherRaceText('');
+    setOtherRaceTouched(false);
+    setSubraceSelection('');
+    setOtherSubraceText('');
+    setOtherSubraceTouched(false);
+    if (raceTouched) {
+      // keep race error state derived from touch + selection
+    }
+  };
+
+  const handleOtherRaceChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const value = event.target.value;
+    setOtherRaceText(value);
+    if (otherRaceTouched) {
+      // keep other race error state derived from touch + text
+    }
+  };
+
+  const handleSubraceChange = (event: any) => {
+    const value = event.target.value as string;
+    setSubraceSelection(value);
+    setOtherSubraceText('');
+    setOtherSubraceTouched(false);
+  };
+
+  const handleOtherSubraceChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    setOtherSubraceText(event.target.value);
   };
 
   const setClassDescriptionValue = (
@@ -57,9 +107,6 @@ const CharEntry = () => {
               ...values,
               ...(values.classSelection && values.classSelection !== 'other'
                 ? { otherClassText: '', subclass: '', subclassOther: '' }
-                : {}),
-              ...(values.classSelection === 'other'
-                ? { otherClassText: '', subclass: 'other' }
                 : {}),
               ...(values.subclass && values.subclass !== 'other'
                 ? { subclassOther: '' }
@@ -136,13 +183,41 @@ const CharEntry = () => {
   const classArray = validClassDescriptions.map((entry) => ({
     name: entry.classSelection === 'other' ? entry.otherClassText : entry.classSelection,
     level: entry.level ? Number(entry.level) : undefined,
-    subclass: entry.subclass === 'other' ? entry.subclassOther : entry.subclass || undefined,
+    subclass: entry.subclass === 'other' ? entry.subclassOther : entry.subclass === 'none' ? undefined : entry.subclass || undefined,
   }));
+
+  const showRaceSelectionError = raceTouched && !raceSelection;
+  const showOtherRaceError =
+    raceSelection === 'other' && otherRaceTouched && otherRaceText.trim() === '';
+  const showOtherSubraceError =
+    subraceSelection === 'other' &&
+    otherSubraceTouched &&
+    otherSubraceText.trim() === '';
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (nameError) {
+      return;
+    }
+
+    if (!raceSelection) {
+      setRaceTouched(true);
+      return;
+    }
+
+    if (raceSelection === 'other' && otherRaceText.trim() === '') {
+      setRaceTouched(true);
+      setOtherRaceTouched(true);
+      return;
+    }
+
+    if (
+      subraceSelection === 'other' &&
+      raceSelection !== 'other' &&
+      otherSubraceText.trim() === ''
+    ) {
+      setOtherSubraceTouched(true);
       return;
     }
 
@@ -156,7 +231,8 @@ const CharEntry = () => {
     console.log({
       charId,
       user_doc,
-      race,
+      race: raceSelection === 'other' ? otherRaceText : raceSelection,
+      subrace: subraceSelection === 'other' ? otherSubraceText : subraceSelection === 'none' ? undefined : subraceSelection || undefined,
       name,
       class: classArray,
     });
@@ -185,15 +261,97 @@ const CharEntry = () => {
         </div>
         <input type="hidden" name="charId" value={charId} />
         <input type="hidden" name="user_doc" value={user_doc} />
-        <input type="hidden" name="race" value={race} />
+        <input
+          type="hidden"
+          name="race"
+          value={raceSelection === 'other' ? otherRaceText : raceSelection}
+        />
+        {subraceSelection && subraceSelection !== 'none' && subraceSelection !== '' && (
+          <input
+            type="hidden"
+            name="subrace"
+            value={subraceSelection === 'other' ? otherSubraceText : subraceSelection}
+          />
+        )}
         <input type="hidden" name="class" value={JSON.stringify(classArray)} />
+        <div
+          className="raceDescription"
+          style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'flex-start',
+            marginTop: '20px',
+            padding: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+            <CharSheetSelect
+              value={raceSelection}
+              onChange={handleRaceChange}
+              onBlur={() => {
+                setRaceTouched(true);
+              }}
+              label="Race*"
+              fieldSize="medium"
+              options={[...raceOptions, { value: 'other', label: 'Other' }]}
+              error={showRaceSelectionError || showOtherRaceError}
+              helperText={
+                showRaceSelectionError
+                  ? 'Please select a race.'
+                  : showOtherRaceError
+                  ? 'Enter a race name when Other is selected.'
+                  : undefined
+              }
+            />
+            {raceSelection === 'other' && (
+              <CharSheetTextField
+                value={otherRaceText}
+                onChange={handleOtherRaceChange}
+                onBlur={() => {
+                  setOtherRaceTouched(true);
+                }}
+                label="Other Race Name*"
+                variant="outlined"
+                fieldSize="medium"
+                error={showOtherRaceError}
+                helperText={showOtherRaceError ? 'Enter a race name when Other is selected.' : undefined}
+              />
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+            {(subraceOptions.length > 0 || raceSelection === 'other') && (
+              <CharSheetSelect
+                value={subraceSelection}
+                onChange={handleSubraceChange}
+                onBlur={() => setOtherSubraceTouched(true)}
+                label="Subrace"
+                fieldSize="medium"
+                options={[{ value: 'none', label: 'None' }, ...subraceOptions, { value: 'other', label: 'Other' }]}
+                error={showOtherSubraceError}
+                helperText={showOtherSubraceError ? 'Enter a subrace name when Other is selected.' : undefined}
+              />
+            )}
+            {subraceSelection === 'other' && (
+              <CharSheetTextField
+                value={otherSubraceText}
+                onChange={handleOtherSubraceChange}
+                onBlur={() => setOtherSubraceTouched(true)}
+                label="Other Subrace Name*"
+                variant="outlined"
+                fieldSize="medium"
+                error={showOtherSubraceError}
+                helperText={showOtherSubraceError ? 'Enter a subrace name when Other is selected.' : undefined}
+              />
+            )}
+          </div>
+        </div>
         {classDescriptions.map((entry, index) => {
           const showClassSelectionError = entry.touched && entry.classSelection === '';
           const showOtherClassError =
             entry.classSelection === 'other' && entry.otherTouched && entry.otherClassText.trim() === '';
           const showLevelWithoutClassError = entry.level.trim() !== '' && !entry.classSelection;
           const showOtherSubclassError =
-            entry.subclass === 'other' && entry.classSelection !== 'other' && entry.otherSubclassTouched && entry.subclassOther.trim() === '';
+            entry.subclass === 'other' && entry.otherSubclassTouched && entry.subclassOther.trim() === '';
           return (
             <Fragment key={`characterClass${index}`}>
               <div
@@ -259,7 +417,7 @@ const CharEntry = () => {
                       fieldSize="medium"
                       options={
                         entry.classSelection === 'other'
-                          ? [{ value: 'other', label: 'Other' }]
+                          ? [{ value: 'none', label: 'None' }, { value: 'other', label: 'Other' }]
                           : entry.classSelection && entry.classSelection !== 'other'
                           ? (() => {
                               const selectedClass = Classes.find((c) => c.class_name === entry.classSelection);
@@ -272,7 +430,7 @@ const CharEntry = () => {
                                         .replace('<subclass_title>', selectedClass.subclass_title || '')
                                     : sub,
                                 })) || [];
-                              return [...subclassOptions.sort((a, b) => a.label.localeCompare(b.label)), { value: 'other', label: 'Other' }];
+                              return [{ value: 'none', label: 'None' }, ...subclassOptions.sort((a, b) => a.label.localeCompare(b.label)), { value: 'other', label: 'Other' }];
                             })()
                           : []
                       }
@@ -284,7 +442,7 @@ const CharEntry = () => {
                         value={entry.subclassOther}
                         onChange={(event) => handleOtherSubclassChange(index, event)}
                         onBlur={() => setClassDescriptionValue(index, { otherSubclassTouched: true })}
-                        label={entry.classSelection !== 'other' ? "Other Subclass Name*" : "Other Subclass Name"}
+                        label="Other Subclass Name*"
                         variant="outlined"
                         fieldSize="medium"
                         error={showOtherSubclassError}

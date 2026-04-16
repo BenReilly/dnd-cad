@@ -22,7 +22,12 @@ import {
   Timestamp,
   where,
 } from 'firebase/firestore';
-import { Character, CharClassFormat, Race } from '../types/Characters.Types';
+import {
+  Background,
+  Character,
+  CharClassFormat,
+  Race,
+} from '../types/Characters.Types';
 import { UserData } from '../types/User.Types';
 import firebaseConfig from './firebase.config';
 
@@ -118,6 +123,37 @@ export const getClasses = async (): Promise<CharClassFormat[]> => {
     docSnapshot.data(),
   );
   return classes;
+};
+
+export const getBackgrounds = async (): Promise<Background[]> => {
+  const collectionRef = collection(
+    db,
+    'backgrounds',
+  ) as CollectionReference<Background>;
+  const querySnapshot = await getDocs(collectionRef);
+  const backgrounds: Background[] = querySnapshot.docs.map((docSnapshot) =>
+    docSnapshot.data(),
+  );
+  return backgrounds;
+};
+
+export const addBackground = async (
+  background: Background,
+): Promise<DocumentReference<Background> | null> => {
+  try {
+    const backgroundsCollection = collection(
+      db,
+      'backgrounds',
+    ) as CollectionReference<Background>;
+    const backgroundDocRef = doc(
+      backgroundsCollection,
+    ) as DocumentReference<Background>;
+    await setDoc(backgroundDocRef, background);
+    return backgroundDocRef;
+  } catch (err) {
+    console.error('Error adding background document:', err);
+    return null;
+  }
 };
 
 export const getCharacters = async (): Promise<Character[]> => {

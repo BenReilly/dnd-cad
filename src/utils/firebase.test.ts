@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  mockedBackgroundData,
   mockedCharacterData,
   mockedCharacterSummaries,
   mockedClassData,
@@ -9,7 +10,9 @@ import {
 } from './mockedTestData';
 import * as firestore from 'firebase/firestore';
 import {
+  addBackground,
   createUserDoc,
+  getBackgrounds,
   getCharacterDetail,
   getCharacters,
   getClasses,
@@ -180,6 +183,54 @@ describe('firebase utility functions', () => {
 
       const result = await getClasses();
       expect(result).toEqual(mockedClassData);
+    });
+  });
+
+  describe('getBackgrounds', () => {
+    it('returns an array of Background[]', async () => {
+      mocks.mockDoc.mockReturnValue(mockCollectionRef);
+      mocks.mockGetDocs.mockResolvedValue({
+        docs: mockedBackgroundData.map((background) => ({
+          data: () => background,
+        })),
+      });
+
+      const result = await getBackgrounds();
+      expect(result).toEqual(mockedBackgroundData);
+    });
+  });
+
+  describe('addBackground', () => {
+    it('adds a background document and returns a document reference', async () => {
+      const backgroundDocRef = {
+        id: 'mock-background-doc',
+      } as firestore.DocumentReference;
+      mocks.mockDoc.mockReturnValue(backgroundDocRef);
+      mocks.mockSetDoc.mockResolvedValue(undefined);
+
+      const result = await addBackground(mockedBackgroundData[0]);
+
+      expect(mocks.mockSetDoc).toHaveBeenCalledWith(
+        backgroundDocRef,
+        mockedBackgroundData[0],
+      );
+      expect(result).toBe(backgroundDocRef);
+    });
+
+    it('returns null when setDoc throws an error', async () => {
+      const backgroundDocRef = {
+        id: 'mock-background-doc',
+      } as firestore.DocumentReference;
+      const sendError = new Error('set document failed');
+      mocks.mockDoc.mockReturnValue(backgroundDocRef);
+      mocks.mockSetDoc.mockRejectedValue(sendError);
+
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const result = await addBackground(mockedBackgroundData[0]);
+
+      expect(spy).toHaveBeenCalledWith('Error adding background document:', sendError);
+      expect(result).toBeNull();
+      spy.mockRestore();
     });
   });
 

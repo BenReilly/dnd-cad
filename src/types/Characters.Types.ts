@@ -90,6 +90,11 @@ export type Race = {
   subraces?: string[];
 };
 
+export type Background = {
+  background_name: string;
+  description?: string;
+};
+
 export type SavingThrows = {
   str: boolean;
   dex: boolean;
@@ -167,6 +172,10 @@ export type CharacterContextType = {
   CurrentCharacter?: Character;
   Characters: Character[];
   CharacterSummaries: CharacterSummary[];
+};
+
+export type BackgroundContextType = {
+  Backgrounds: Background[];
 };
 
 export type RaceAndClassContextType = {

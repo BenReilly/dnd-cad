@@ -38,11 +38,11 @@ export const mockedClassData = [
 
 export const mockedBackgroundData = [
   {
-    background_name: 'Acolyte',
+    bg_name: 'Acolyte',
     description: 'Raised in a temple, you have a deep commitment to your faith.',
   },
   {
-    background_name: 'Criminal',
+    bg_name: 'Criminal',
     description: 'You have a history of breaking the law and working from the shadows.',
   },
 ];

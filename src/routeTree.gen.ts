@@ -12,6 +12,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as GenerateRouteImport } from './routes/generate'
+import { Route as FooRouteImport } from './routes/foo'
 import { Route as AboutRouteImport } from './routes/about'
 
 const IndexLazyRouteImport = createFileRoute('/')()
@@ -19,6 +20,11 @@ const IndexLazyRouteImport = createFileRoute('/')()
 const GenerateRoute = GenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FooRoute = FooRouteImport.update({
+  id: '/foo',
+  path: '/foo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -35,30 +41,34 @@ const IndexLazyRoute = IndexLazyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/about': typeof AboutRoute
+  '/foo': typeof FooRoute
   '/generate': typeof GenerateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/about': typeof AboutRoute
+  '/foo': typeof FooRoute
   '/generate': typeof GenerateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexLazyRoute
   '/about': typeof AboutRoute
+  '/foo': typeof FooRoute
   '/generate': typeof GenerateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/generate'
+  fullPaths: '/' | '/about' | '/foo' | '/generate'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/generate'
-  id: '__root__' | '/' | '/about' | '/generate'
+  to: '/' | '/about' | '/foo' | '/generate'
+  id: '__root__' | '/' | '/about' | '/foo' | '/generate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   AboutRoute: typeof AboutRoute
+  FooRoute: typeof FooRoute
   GenerateRoute: typeof GenerateRoute
 }
 
@@ -69,6 +79,13 @@ declare module '@tanstack/react-router' {
       path: '/generate'
       fullPath: '/generate'
       preLoaderRoute: typeof GenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/foo': {
+      id: '/foo'
+      path: '/foo'
+      fullPath: '/foo'
+      preLoaderRoute: typeof FooRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -91,6 +108,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   AboutRoute: AboutRoute,
+  FooRoute: FooRoute,
   GenerateRoute: GenerateRoute,
 }
 export const routeTree = rootRouteImport

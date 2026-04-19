@@ -91,7 +91,7 @@ export type Race = {
 };
 
 export type Background = {
-  background_name: string;
+  bg_name: string;
   description?: string;
 };
 

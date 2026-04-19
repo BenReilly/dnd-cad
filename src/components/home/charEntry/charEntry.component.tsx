@@ -4,10 +4,14 @@ import { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import CharSheetTextField from '../../library/textField/CharSheetTextField';
 import CharSheetSelect from '../../library/select/CharSheetSelect';
+import CharSheetAutocomplete from '../../library/select/CharSheetAutocomplete';
 import { RaceClassContext } from '../../../contexts/racesAndClasses.context';
+import { BackgroundsContext } from '../../../contexts/backgrounds.context';
 
 const CharEntry = () => {
   const { Classes, Races } = useContext(RaceClassContext);
+  const { Backgrounds } = useContext(BackgroundsContext);
+  console.log('Backgrounds from context:', Backgrounds);
   const charId = 'someIdHere';
   const user_doc = 'eje';
   const [name, setName] = useState('');
@@ -23,11 +27,17 @@ const CharEntry = () => {
   const [classDescriptions, setClassDescriptions] = useState([
     { classSelection: '', otherClassText: '', level: '', subclass: '', subclassOther: '', touched: false, otherTouched: false, subclassTouched: false, otherSubclassTouched: false },
   ]);
+  const [background, setBackground] = useState('');
   const [formError, setFormError] = useState('');
 
   const classOptions = Classes.map((classItem) => ({
     value: classItem.class_name,
     label: classItem.class_name,
+  })).sort((a, b) => a.label.localeCompare(b.label));
+
+  const backgroundOptions = Backgrounds.map((bg) => ({
+    value: bg.bg_name,
+    label: bg.bg_name,
   })).sort((a, b) => a.label.localeCompare(b.label));
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -236,6 +246,7 @@ const CharEntry = () => {
       subrace: subraceSelection === 'other' ? otherSubraceText : subraceSelection === 'none' ? undefined : subraceSelection || undefined,
       name,
       class: classArray,
+      background,
     });
   };
 
@@ -275,6 +286,7 @@ const CharEntry = () => {
           />
         )}
         <input type="hidden" name="class" value={JSON.stringify(classArray)} />
+        <input type="hidden" name="background" value={background} />
         <div
           className="raceDescription"
           style={{
@@ -483,6 +495,17 @@ const CharEntry = () => {
             <AddIcon sx={{ width: 20, height: 20, strokeWidth: 2, color: '#fff' }} />
             <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>{'add another character class'}</span>
           </button>
+        </div>
+        <div style={{ padding: '8px', marginBottom: '5px' }}>
+          <CharSheetAutocomplete
+            value={background ? backgroundOptions.find(opt => opt.value === background) : null}
+            onChange={(_, newValue) => setBackground(newValue?.value || '')}
+            options={backgroundOptions}
+            fieldSize="medium"
+            label="Background"
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(option, value) => option.value === value.value}
+          />
         </div>
         <div style={{ marginTop: '20px' }}>
           <Button type="submit" variant="contained">

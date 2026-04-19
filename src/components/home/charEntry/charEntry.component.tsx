@@ -498,13 +498,31 @@ const CharEntry = () => {
         </div>
         <div style={{ padding: '8px', marginBottom: '5px' }}>
           <CharSheetAutocomplete
-            value={background ? backgroundOptions.find(opt => opt.value === background) : null}
-            onChange={(_, newValue) => setBackground(newValue?.value || '')}
+            value={background ? backgroundOptions.find(opt => opt.value === background) || { value: background, label: background } : null}
+            inputValue={background}
+            onInputChange={(_, newInputValue) => setBackground(newInputValue)}
+            onChange={(_, newValue) => {
+              if (newValue) {
+                setBackground(typeof newValue === 'string' ? newValue : newValue.value);
+              }
+            }}
             options={backgroundOptions}
             fieldSize="medium"
             label="Background"
-            getOptionLabel={(option) => option.label}
-            isOptionEqualToValue={(option, value) => option.value === value.value}
+            getOptionLabel={(option) => {
+              if (typeof option === 'string') {
+                return option;
+              }
+              return option.label;
+            }}
+            isOptionEqualToValue={(option, value) => {
+              if (typeof option === 'string' || typeof value === 'string') {
+                const optVal = typeof option === 'string' ? option : option.value;
+                const valVal = typeof value === 'string' ? value : value.value;
+                return optVal === valVal;
+              }
+              return option.value === value.value;
+            }}
           />
         </div>
         <div style={{ marginTop: '20px' }}>

@@ -6,7 +6,6 @@ import {
   getDocs,
   CollectionReference,
   DocumentReference,
-  DocumentData,
 } from 'firebase/firestore'
 import { db } from '../utils/firebase.utils'
 

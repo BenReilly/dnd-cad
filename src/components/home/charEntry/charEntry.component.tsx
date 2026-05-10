@@ -3,10 +3,35 @@ import { Button } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import CharSheetTextField from '../../library/textField/CharSheetTextField';
+import CharSheetNumberField from '../../library/numberField/CharSheetNumberField';
 import CharSheetSelect from '../../library/select/CharSheetSelect';
 import CharSheetAutocomplete from '../../library/select/CharSheetAutocomplete';
 import { RaceClassContext } from '../../../contexts/racesAndClasses.context';
 import { BackgroundsContext } from '../../../contexts/backgrounds.context';
+
+type ClassDescription = {
+  classSelection: string;
+  otherClassText: string;
+  level: number | null;
+  subclass: string;
+  subclassOther: string;
+  touched: boolean;
+  otherTouched: boolean;
+  subclassTouched: boolean;
+  otherSubclassTouched: boolean;
+};
+
+const emptyClassDescription = (): ClassDescription => ({
+  classSelection: '',
+  otherClassText: '',
+  level: null,
+  subclass: '',
+  subclassOther: '',
+  touched: false,
+  otherTouched: false,
+  subclassTouched: false,
+  otherSubclassTouched: false,
+});
 
 const CharEntry = () => {
   const { Classes, Races } = useContext(RaceClassContext);
@@ -24,9 +49,9 @@ const CharEntry = () => {
   const [subraceSelection, setSubraceSelection] = useState('');
   const [otherSubraceText, setOtherSubraceText] = useState('');
   const [otherSubraceTouched, setOtherSubraceTouched] = useState(false);
-  const [classDescriptions, setClassDescriptions] = useState([
-    { classSelection: '', otherClassText: '', level: '', subclass: '', subclassOther: '', touched: false, otherTouched: false, subclassTouched: false, otherSubclassTouched: false },
-  ]);
+  const [classDescriptions, setClassDescriptions] = useState<
+    ClassDescription[]
+  >([emptyClassDescription()]);
   const [background, setBackground] = useState('');
   const [formError, setFormError] = useState('');
 
@@ -101,7 +126,7 @@ const CharEntry = () => {
     values: Partial<{
       classSelection: string;
       otherClassText: string;
-      level: string;
+      level: number | null;
       subclass: string;
       subclassOther: string;
       touched: boolean;
@@ -154,23 +179,15 @@ const CharEntry = () => {
 
   const handleLevelChange = (
     index: number,
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    value: number | null,
   ) => {
-    const rawValue = event.target.value;
-    const digits = rawValue.replace(/[^0-9]/g, '');
-    if (digits === '') {
-      setClassDescriptionValue(index, { level: '' });
-      return;
-    }
-    const numeric = Number(digits);
-    const clamped = Math.min(20, Math.max(1, numeric));
-    setClassDescriptionValue(index, { level: String(clamped) });
+    setClassDescriptionValue(index, { level: value });
   };
 
   const duplicateClassDescription = (index: number) => {
     setClassDescriptions((current) => {
       const next = [...current];
-      next.splice(index + 1, 0, { classSelection: '', otherClassText: '', level: '', subclass: '', subclassOther: '', touched: false, otherTouched: false, subclassTouched: false, otherSubclassTouched: false });
+      next.splice(index + 1, 0, emptyClassDescription());
       return next;
     });
   };
@@ -182,7 +199,7 @@ const CharEntry = () => {
     if (entry.classSelection === 'other' && entry.otherClassText.trim().length === 0) {
       return false;
     }
-    if (entry.level.trim() !== '' && !entry.classSelection) {
+    if (entry.level !== null && !entry.classSelection) {
       return false;
     }
     if (entry.subclass === 'other' && entry.classSelection !== 'other' && entry.subclassOther.trim().length === 0) {
@@ -193,7 +210,7 @@ const CharEntry = () => {
 
   const classArray = validClassDescriptions.map((entry) => ({
     name: entry.classSelection === 'other' ? entry.otherClassText : entry.classSelection,
-    level: entry.level ? Number(entry.level) : undefined,
+    level: entry.level ?? undefined,
     subclass: entry.subclass === 'other' ? entry.subclassOther : entry.subclass === 'none' ? undefined : entry.subclass || undefined,
   }));
 
@@ -362,7 +379,8 @@ const CharEntry = () => {
           const showClassSelectionError = entry.touched && entry.classSelection === '';
           const showOtherClassError =
             entry.classSelection === 'other' && entry.otherTouched && entry.otherClassText.trim() === '';
-          const showLevelWithoutClassError = entry.level.trim() !== '' && !entry.classSelection;
+          const showLevelWithoutClassError =
+            entry.level !== null && !entry.classSelection;
           const showOtherSubclassError =
             entry.subclass === 'other' && entry.otherSubclassTouched && entry.subclassOther.trim() === '';
           return (
@@ -411,14 +429,14 @@ const CharEntry = () => {
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
-                    <CharSheetTextField
+                    <CharSheetNumberField
                       value={entry.level}
-                      onChange={(event) => handleLevelChange(index, event)}
+                      onValueChange={(value) => handleLevelChange(index, value)}
                       label="Level"
                       variant="outlined"
                       fieldSize="tiny"
-                      type="number"
-                      slotProps={{ input: { inputProps: { min: 1, max: 20 } } }}
+                      min={1}
+                      max={20}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>

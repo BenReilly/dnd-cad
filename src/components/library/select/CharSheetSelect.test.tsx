@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import CharSheetSelect from './CharSheetSelect';
 import { describe, it, expect, vi } from 'vitest';
+import { MenuItem } from '@mui/material';
 
 describe('CharSheetSelect', () => {
   const mockOptions = [
@@ -19,10 +20,9 @@ describe('CharSheetSelect', () => {
       <CharSheetSelect
         label="Test"
         options={mockOptions}
-        data-testid="test-select"
       />,
     );
-    const formControl = container.querySelector('[data-testid="test-select"]');
+    const formControl = container.querySelector('.MuiFormControl-root');
     const styles = window.getComputedStyle(formControl!);
     expect(styles.width).toBe('300px');
   });
@@ -33,10 +33,9 @@ describe('CharSheetSelect', () => {
         label="Test"
         fieldSize="full"
         options={mockOptions}
-        data-testid="test-select"
       />,
     );
-    const formControl = container.querySelector('[data-testid="test-select"]');
+    const formControl = container.querySelector('.MuiFormControl-root');
     const styles = window.getComputedStyle(formControl!);
     expect(styles.width).toBe('100%');
   });
@@ -47,10 +46,9 @@ describe('CharSheetSelect', () => {
         label="Test"
         fieldSize="large"
         options={mockOptions}
-        data-testid="test-select"
       />,
     );
-    const formControl = container.querySelector('[data-testid="test-select"]');
+    const formControl = container.querySelector('.MuiFormControl-root');
     const styles = window.getComputedStyle(formControl!);
     expect(styles.width).toBe('500px');
   });
@@ -61,10 +59,9 @@ describe('CharSheetSelect', () => {
         label="Test"
         fieldSize="small"
         options={mockOptions}
-        data-testid="test-select"
       />,
     );
-    const formControl = container.querySelector('[data-testid="test-select"]');
+    const formControl = container.querySelector('.MuiFormControl-root');
     const styles = window.getComputedStyle(formControl!);
     expect(styles.width).toBe('175px');
   });
@@ -75,16 +72,17 @@ describe('CharSheetSelect', () => {
         label="Test"
         fieldSize="tiny"
         options={mockOptions}
-        data-testid="test-select"
       />,
     );
-    const formControl = container.querySelector('[data-testid="test-select"]');
+    const formControl = container.querySelector('.MuiFormControl-root');
     const styles = window.getComputedStyle(formControl!);
     expect(styles.width).toBe('100px');
   });
 
   it('renders options from options prop', () => {
     render(<CharSheetSelect label="Test" options={mockOptions} />);
+    fireEvent.mouseDown(screen.getByRole('combobox'));
+
     expect(screen.getByText('Option 1')).toBeInTheDocument();
     expect(screen.getByText('Option 2')).toBeInTheDocument();
     expect(screen.getByText('Option 3')).toBeInTheDocument();
@@ -93,10 +91,12 @@ describe('CharSheetSelect', () => {
   it('renders custom children instead of options', () => {
     render(
       <CharSheetSelect label="Test">
-        <option value="custom1">Custom Option 1</option>
-        <option value="custom2">Custom Option 2</option>
+        <MenuItem value="custom1">Custom Option 1</MenuItem>
+        <MenuItem value="custom2">Custom Option 2</MenuItem>
       </CharSheetSelect>,
     );
+    fireEvent.mouseDown(screen.getByRole('combobox'));
+
     expect(screen.getByText('Custom Option 1')).toBeInTheDocument();
     expect(screen.getByText('Custom Option 2')).toBeInTheDocument();
   });
@@ -200,7 +200,20 @@ describe('CharSheetSelect', () => {
       />,
     );
     const select = screen.getByTestId('disabled-select');
-    expect(select).toBeDisabled();
+    expect(select).toHaveClass('Mui-disabled');
+  });
+
+  it('uses #333 for disabled outlined borders', () => {
+    render(
+      <CharSheetSelect
+        label="Test"
+        options={mockOptions}
+        disabled
+      />,
+    );
+
+    expect(document.head.innerHTML).toContain('#333');
+    expect(document.head.innerHTML).toContain('Mui-disabled');
   });
 
   it('renders with empty options array', () => {

@@ -29,6 +29,7 @@ const CharSheetSelect: React.FC<CharSheetSelectProps> = ({
   label,
   children,
   error,
+  value = '',
   ...props
 }) => {
   const width = sizeMap[fieldSize];
@@ -57,15 +58,22 @@ const CharSheetSelect: React.FC<CharSheetSelectProps> = ({
         {...props}
         label={label}
         labelId={labelId}
+        value={value}
         sx={{
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: '#ccc',
           },
-          '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+          '&:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: '#ccc',
           },
-          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: '#ccc',
+          },
+          '&&.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#333 !important',
+          },
+          '&&.Mui-disabled:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#333 !important',
           },
           '& .MuiSelect-select': {
             fontFamily: '"Quintessential", serif',

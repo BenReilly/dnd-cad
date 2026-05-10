@@ -1,6 +1,10 @@
 import React from 'react';
 import { TextField, TextFieldProps } from '@mui/material';
 
+type SlotPropsWithStyle = {
+  style?: React.CSSProperties;
+};
+
 interface CharSheetTextFieldProps
   extends Omit<TextFieldProps, 'size'> {
   fieldSize?: 'full' | 'large' | 'medium' | 'small' | 'tiny';
@@ -20,6 +24,10 @@ const CharSheetTextField: React.FC<CharSheetTextFieldProps> = ({
   ...props
 }: CharSheetTextFieldProps & { slotProps?: TextFieldProps['slotProps'] }) => {
   const width = sizeMap[fieldSize];
+  const inputSlotProps = userSlotProps?.input as SlotPropsWithStyle | undefined;
+  const inputLabelSlotProps = userSlotProps?.inputLabel as
+    | SlotPropsWithStyle
+    | undefined;
 
   const mergedSlotProps = {
     ...userSlotProps,
@@ -30,7 +38,7 @@ const CharSheetTextField: React.FC<CharSheetTextFieldProps> = ({
         fontWeight: 400,
         fontStyle: 'normal',
         color: '#ccc',
-        ...(userSlotProps?.input as any)?.style,
+        ...inputSlotProps?.style,
       },
     },
     inputLabel: {
@@ -40,7 +48,7 @@ const CharSheetTextField: React.FC<CharSheetTextFieldProps> = ({
         fontWeight: 400,
         fontStyle: 'normal',
         color: '#ccc',
-        ...(userSlotProps?.inputLabel as any)?.style,
+        ...inputLabelSlotProps?.style,
       },
     },
   };

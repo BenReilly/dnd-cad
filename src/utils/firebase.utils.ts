@@ -27,6 +27,7 @@ import {
   Character,
   CharClassFormat,
   Race,
+  Skill,
 } from '../types/Characters.Types';
 import { UserData } from '../types/User.Types';
 import firebaseConfig from './firebase.config';
@@ -135,6 +136,13 @@ export const getBackgrounds = async (): Promise<Background[]> => {
     docSnapshot.data(),
   );
   return backgrounds;
+};
+
+export const getSkills = async (): Promise<Skill[]> => {
+  const collectionRef = collection(db, 'skills') as CollectionReference<Skill>;
+  const querySnapshot = await getDocs(collectionRef);
+  const skills: Skill[] = querySnapshot.docs.map((docSnapshot) => docSnapshot.data());
+  return skills;
 };
 
 export const addBackground = async (

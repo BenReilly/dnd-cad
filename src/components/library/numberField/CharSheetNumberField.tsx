@@ -22,6 +22,7 @@ interface CharSheetNumberFieldProps
   max?: number;
   step?: number;
   showPositiveSign?: boolean;
+  hideStepper?: boolean;
 }
 
 const sizeMap = {
@@ -62,6 +63,7 @@ const CharSheetNumberField: React.FC<CharSheetNumberFieldProps> = ({
   max,
   step = 1,
   showPositiveSign = false,
+  hideStepper = false,
   slotProps: userSlotProps,
   onBlur,
   disabled,
@@ -114,41 +116,45 @@ const CharSheetNumberField: React.FC<CharSheetNumberFieldProps> = ({
     },
     input: {
       ...(userSlotProps?.input ?? {}),
-      endAdornment: (
-        <InputAdornment position="end">
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              mr: '-6px',
-            }}
-          >
-            <IconButton
-              aria-label="Increment"
-              disabled={
-                disabled || (max !== undefined && value !== null && value >= max)
-              }
-              onClick={increment}
-              size="small"
-              sx={{ height: 14, p: 0, width: 20 }}
-            >
-              <ArrowDropUpIcon fontSize="small" />
-            </IconButton>
-            <IconButton
-              aria-label="Decrement"
-              disabled={
-                disabled || (min !== undefined && value !== null && value <= min)
-              }
-              onClick={decrement}
-              size="small"
-              sx={{ height: 14, p: 0, width: 20 }}
-            >
-              <ArrowDropDownIcon fontSize="small" />
-            </IconButton>
-          </Box>
-        </InputAdornment>
-      ),
+      ...(hideStepper
+        ? {}
+        : {
+            endAdornment: (
+              <InputAdornment position="end">
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    mr: '-6px',
+                  }}
+                >
+                  <IconButton
+                    aria-label="Increment"
+                    disabled={
+                      disabled || (max !== undefined && value !== null && value >= max)
+                    }
+                    onClick={increment}
+                    size="small"
+                    sx={{ height: 14, p: 0, width: 20 }}
+                  >
+                    <ArrowDropUpIcon fontSize="small" />
+                  </IconButton>
+                  <IconButton
+                    aria-label="Decrement"
+                    disabled={
+                      disabled || (min !== undefined && value !== null && value <= min)
+                    }
+                    onClick={decrement}
+                    size="small"
+                    sx={{ height: 14, p: 0, width: 20 }}
+                  >
+                    <ArrowDropDownIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </InputAdornment>
+            ),
+          }),
       style: {
         fontFamily: '"Quintessential", serif',
         fontWeight: 400,
@@ -186,6 +192,15 @@ const CharSheetNumberField: React.FC<CharSheetNumberFieldProps> = ({
         },
         '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
           borderColor: '#ccc',
+        },
+        '& .MuiInputBase-root.Mui-disabled .MuiOutlinedInput-input': {
+          color: '#ccc',
+          WebkitTextFillColor: '#ccc',
+          opacity: 1,
+        },
+        '& .MuiOutlinedInput-root.Mui-disabled': {
+          color: '#ccc',
+          WebkitTextFillColor: '#ccc',
         },
         '& .MuiIconButton-root': {
           color: '#ccc',

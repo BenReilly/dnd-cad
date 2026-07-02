@@ -142,7 +142,7 @@ export const mockedCharacterData = {
     insight: true,
     history: false,
     arcana: true,
-    slightOfHand: false,
+    sleightOfHand: false,
     perception: false,
     nature: true,
     acrobatics: false,

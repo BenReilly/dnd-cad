@@ -1,90 +1,81 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import {
-  collection,
-  deleteDoc,
-  getDocs,
-  CollectionReference,
-  DocumentReference,
-} from 'firebase/firestore'
+import { addDoc, collection, CollectionReference } from 'firebase/firestore'
 import { db } from '../utils/firebase.utils'
+
+type Skill = {
+  key: string
+  display: string
+  attribute: string
+}
+
+const skills: Skill[] = [
+  { key: 'acrobatics', display: 'Acrobatics', attribute: 'dex' },
+  { key: 'animalHandling', display: 'Animal Handling', attribute: 'wis' },
+  { key: 'arcana', display: 'Arcana', attribute: 'int' },
+  { key: 'athletics', display: 'Athletics', attribute: 'str' },
+  { key: 'deception', display: 'Deception', attribute: 'cha' },
+  { key: 'history', display: 'History', attribute: 'int' },
+  { key: 'insight', display: 'Insight', attribute: 'wis' },
+  { key: 'intimidation', display: 'Intimidation', attribute: 'cha' },
+  { key: 'investigation', display: 'Investigation', attribute: 'int' },
+  { key: 'medicine', display: 'Medicine', attribute: 'wis' },
+  { key: 'nature', display: 'Nature', attribute: 'wis' },
+  { key: 'perception', display: 'Perception', attribute: 'wis' },
+  { key: 'performance', display: 'Performance', attribute: 'cha' },
+  { key: 'persuasion', display: 'Persuasion', attribute: 'cha' },
+  { key: 'religion', display: 'Religion', attribute: 'wis' },
+  { key: 'sleightOfHand', display: 'Sleight of Hand', attribute: 'dex' },
+  { key: 'stealth', display: 'Stealth', attribute: 'dex' },
+  { key: 'survival', display: 'Survival', attribute: 'wis' },
+]
 
 export const Route = createFileRoute('/foo')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const [status, setStatus] = useState('Running duplicate cleanup...')
-  const [removedCount, setRemovedCount] = useState(0)
-  const [remainingBackgrounds, setRemainingBackgrounds] = useState<string[]>([])
+  const [status, setStatus] = useState('Uploading skills to Firestore...')
+  const [uploadedCount, setUploadedCount] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const cleanupBackgroundDuplicates = async () => {
+    const uploadSkills = async () => {
       try {
-        type BackgroundDoc = { bg_name?: string }
-        const backgroundsCollection = collection(
-          db,
-          'backgrounds',
-        ) as CollectionReference<BackgroundDoc>
-        const querySnapshot = await getDocs(backgroundsCollection)
+        const skillsCollection = collection(db, 'skills') as CollectionReference<Skill>
 
-        const seen = new Map<string, { name: string; ref: DocumentReference<BackgroundDoc> }>()
-        const duplicates: Array<{ ref: DocumentReference<BackgroundDoc>; name: string }> = []
+        await Promise.all(
+          skills.map((skill) => addDoc(skillsCollection, skill)),
+        )
 
-        querySnapshot.docs.forEach((doc) => {
-          const data = doc.data() as BackgroundDoc
-          const rawName = String(data.bg_name ?? '').trim()
-          const normalizedName = rawName.toLowerCase()
-
-          if (!normalizedName) {
-            return
-          }
-
-          if (seen.has(normalizedName)) {
-            duplicates.push({ ref: doc.ref, name: rawName })
-          } else {
-            seen.set(normalizedName, { name: rawName, ref: doc.ref })
-          }
-        })
-
-        await Promise.all(duplicates.map((dup) => deleteDoc(dup.ref)))
-
-        const remaining = Array.from(seen.values())
-          .map((item) => item.name)
-          .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
-
-        setRemovedCount(duplicates.length)
-        setRemainingBackgrounds(remaining)
-        setStatus('Duplicate cleanup completed successfully.')
+        setUploadedCount(skills.length)
+        setStatus('Skills uploaded successfully.')
       } catch (err) {
-        setError((err as Error).message || 'Unknown error during cleanup.')
-        setStatus('Duplicate cleanup failed.')
+        setError((err as Error).message || 'Unknown error during skills upload.')
+        setStatus('Skills upload failed.')
       }
     }
 
-    cleanupBackgroundDuplicates()
+    uploadSkills()
   }, [])
 
   return (
     <div style={{ padding: '24px' }}>
-      <h1>Background Deduplication</h1>
+      <h1>Upload Skill Set</h1>
       <p>{status}</p>
       {error ? (
         <p style={{ color: 'red' }}>Error: {error}</p>
       ) : (
         <>
-          <p>Records removed: {removedCount}</p>
-          <h2>Remaining Backgrounds</h2>
-          {remainingBackgrounds.length === 0 ? (
-            <p>No remaining backgrounds found.</p>
-          ) : (
-            <ul>
-              {remainingBackgrounds.map((bgName) => (
-                <li key={bgName}>{bgName}</li>
-              ))}
-            </ul>
-          )}
+          <p>Uploaded skills: {uploadedCount}</p>
+          <h2>Skill List</h2>
+          <ul>
+            {skills.map((skill) => (
+              <li key={skill.key}>
+                {skill.display} ({skill.attribute})
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </div>

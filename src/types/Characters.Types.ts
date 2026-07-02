@@ -40,6 +40,18 @@ export type CharClass = {
   level?: number;
 };
 
+export type ClassDescription = {
+  classSelection: string;
+  otherClassText: string;
+  level: number | null;
+  subclass: string;
+  subclassOther: string;
+  touched: boolean;
+  otherTouched: boolean;
+  subclassTouched: boolean;
+  otherSubclassTouched: boolean;
+};
+
 export type CharClassFormat = {
   class_name: string;
   subclass_format: string;
@@ -104,26 +116,14 @@ export type SavingThrows = {
   cha: boolean;
 };
 
-export type Skills = {
-  acrobatics: boolean | 'double';
-  animalHandling: boolean | 'double';
-  arcana: boolean | 'double';
-  athletics: boolean | 'double';
-  deception: boolean | 'double';
-  history: boolean | 'double';
-  insight: boolean | 'double';
-  intimidation: boolean | 'double';
-  investigation: boolean | 'double';
-  medicine: boolean | 'double';
-  nature: boolean | 'double';
-  perception: boolean | 'double';
-  performance: boolean | 'double';
-  persuasion: boolean | 'double';
-  religion: boolean | 'double';
-  slightOfHand: boolean | 'double';
-  stealth: boolean | 'double';
-  survival: boolean | 'double';
-};
+export type Skill = {
+  key: string;
+  display: string;
+  specialized?: boolean;
+  proficient?: boolean;
+  attribute: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
+}
+
 
 export type Character = {
   charId: string;
@@ -139,7 +139,7 @@ export type Character = {
   attributes?: Attributes;
   inspiration?: number;
   savingThrows?: SavingThrows;
-  skills?: Skills;
+  skills?: Skill[];
   ac?: number;
   initiative?: number;
   speed?: number;
@@ -176,6 +176,10 @@ export type CharacterContextType = {
 
 export type BackgroundContextType = {
   Backgrounds: Background[];
+};
+
+export type SkillsContextType = {
+  Skills: Skill[];
 };
 
 export type RaceAndClassContextType = {

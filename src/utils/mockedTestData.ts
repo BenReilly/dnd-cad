@@ -297,7 +297,7 @@ export const mockedCharacterData = {
   ],
   race: 'Half-Orc',
   background: 'Acolyte',
-  attributes: {
+  abilities: {
     str: 12,
     dex: 12,
     int: 10,

@@ -93,6 +93,37 @@ describe('CharSheetNumberField', () => {
     expect(handleValueChange).toHaveBeenCalledWith(2);
   });
 
+  it('formats grouped values with commas when requested', () => {
+    render(
+      <CharSheetNumberField
+        label="Total XP"
+        value={1000000}
+        onValueChange={() => null}
+        useGrouping
+      />,
+    );
+
+    expect(screen.getByLabelText('Total XP')).toHaveValue('1,000,000');
+  });
+
+  it('parses comma-separated values as numbers', () => {
+    const handleValueChange = vi.fn();
+    render(
+      <CharSheetNumberField
+        label="Total XP"
+        value={null}
+        onValueChange={handleValueChange}
+        useGrouping
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Total XP'), {
+      target: { value: '1,000,000' },
+    });
+
+    expect(handleValueChange).toHaveBeenCalledWith(1000000);
+  });
+
   it('increments and decrements by step', () => {
     const handleValueChange = vi.fn();
     const { rerender } = render(

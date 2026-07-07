@@ -8,6 +8,7 @@ import {
   TextField,
   TextFieldProps,
 } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 
 type SlotPropsWithStyle = {
   style?: React.CSSProperties;
@@ -23,6 +24,8 @@ interface CharSheetNumberFieldProps
   step?: number;
   showPositiveSign?: boolean;
   hideStepper?: boolean;
+  useGrouping?: boolean;
+  sx?: SxProps<Theme>;
 }
 
 const sizeMap = {
@@ -38,15 +41,28 @@ const clampValue = (value: number, min?: number, max?: number) => {
   return max === undefined ? minClamped : Math.min(max, minClamped);
 };
 
-const formatValue = (value: number | null, showPositiveSign: boolean) => {
+const formatValue = (
+  value: number | null,
+  showPositiveSign: boolean,
+  useGrouping: boolean,
+) => {
   if (value === null) {
     return '';
   }
-  return showPositiveSign && value > 0 ? `+${value}` : String(value);
+
+  const absoluteValue = useGrouping
+    ? Math.abs(value).toLocaleString('en-US')
+    : String(Math.abs(value));
+
+  if (value < 0) {
+    return `-${absoluteValue}`;
+  }
+
+  return showPositiveSign && value > 0 ? `+${absoluteValue}` : absoluteValue;
 };
 
 const parseInputValue = (value: string) => {
-  const normalized = value.trim().replace(/^\+/, '');
+  const normalized = value.trim().replace(/,/g, '').replace(/^\+/, '');
   if (normalized === '' || normalized === '-') {
     return null;
   }
@@ -64,9 +80,11 @@ const CharSheetNumberField: React.FC<CharSheetNumberFieldProps> = ({
   step = 1,
   showPositiveSign = false,
   hideStepper = false,
+  useGrouping = false,
   slotProps: userSlotProps,
   onBlur,
   disabled,
+  sx: userSx,
   ...props
 }: CharSheetNumberFieldProps & { slotProps?: TextFieldProps['slotProps'] }) => {
   const width = sizeMap[fieldSize];
@@ -75,12 +93,12 @@ const CharSheetNumberField: React.FC<CharSheetNumberFieldProps> = ({
     | SlotPropsWithStyle
     | undefined;
   const [displayValue, setDisplayValue] = useState(
-    formatValue(value, showPositiveSign),
+    formatValue(value, showPositiveSign, useGrouping),
   );
 
   useEffect(() => {
-    setDisplayValue(formatValue(value, showPositiveSign));
-  }, [showPositiveSign, value]);
+    setDisplayValue(formatValue(value, showPositiveSign, useGrouping));
+  }, [showPositiveSign, useGrouping, value]);
 
   const setNextValue = (nextValue: number | null) => {
     onValueChange(
@@ -101,7 +119,7 @@ const CharSheetNumberField: React.FC<CharSheetNumberFieldProps> = ({
   const handleBlur = (
     event: FocusEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    setDisplayValue(formatValue(value, showPositiveSign));
+    setDisplayValue(formatValue(value, showPositiveSign, useGrouping));
     onBlur?.(event);
   };
 
@@ -182,30 +200,33 @@ const CharSheetNumberField: React.FC<CharSheetNumberFieldProps> = ({
       onBlur={handleBlur}
       onChange={handleChange}
       slotProps={mergedSlotProps}
-      sx={{
-        width,
-        '& .MuiOutlinedInput-notchedOutline': {
-          borderColor: '#ccc',
+      sx={[
+        {
+          width,
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#ccc',
+          },
+          '& .MuiOutlinedInput-root:not(.Mui-disabled):hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#ccc',
+          },
+          '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#ccc',
+          },
+          '& .MuiInputBase-root.Mui-disabled .MuiOutlinedInput-input': {
+            color: '#ccc',
+            WebkitTextFillColor: '#ccc',
+            opacity: 1,
+          },
+          '& .MuiOutlinedInput-root.Mui-disabled': {
+            color: '#ccc',
+            WebkitTextFillColor: '#ccc',
+          },
+          '& .MuiIconButton-root': {
+            color: '#ccc',
+          },
         },
-        '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-          borderColor: '#ccc',
-        },
-        '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-          borderColor: '#ccc',
-        },
-        '& .MuiInputBase-root.Mui-disabled .MuiOutlinedInput-input': {
-          color: '#ccc',
-          WebkitTextFillColor: '#ccc',
-          opacity: 1,
-        },
-        '& .MuiOutlinedInput-root.Mui-disabled': {
-          color: '#ccc',
-          WebkitTextFillColor: '#ccc',
-        },
-        '& .MuiIconButton-root': {
-          color: '#ccc',
-        },
-      }}
+        ...(Array.isArray(userSx) ? userSx : userSx ? [userSx] : []),
+      ]}
       type="text"
       value={displayValue}
     />

@@ -150,7 +150,7 @@ PDF_DATA.forEach((c) => {
     subrace,
     alignment: c.Alignment || null,
     xp: c.XP || 0,
-    attributes: {
+    abilities: {
       str: c.STR || null,
       dex: c.DEX || null,
       con: c.CON || null,
@@ -183,7 +183,7 @@ PDF_DATA.forEach((c) => {
       performance: c['Performance cb'] === 'Yes',
       persuasion: c['Persuasion cb'] === 'Yes',
       religion: c['Religion cb'] === 'Yes',
-      slightOfHand: c['Sleight cb'] === 'Yes',
+      sleightOfHand: c['Sleight cb'] === 'Yes',
       stealth: c['Stealth cb'] === 'Yes',
       survival: c['Survival cb'] === 'Yes',
     },

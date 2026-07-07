@@ -19,14 +19,14 @@ export type Ally = {
 
 export type Attack = {
   name: string;
-  attackBonus: number;
+  attackBonus: number | null;
   damage: string;
-  normalRange: number | null;
-  longRange: number | null;
+  normalRange?: number | null;
+  longRange?: number | null;
   type: string;
 };
 
-export type Attributes = {
+export type Abilities = {
   str: number;
   dex: number;
   con: number;
@@ -119,9 +119,9 @@ export type SavingThrows = {
 export type Skill = {
   key: string;
   display: string;
-  specialized?: boolean;
+  expertise?: boolean;
   proficient?: boolean;
-  attribute: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
+  ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
 }
 
 
@@ -136,7 +136,7 @@ export type Character = {
   subrace?: string;
   alignment?: Alignment;
   xp?: number;
-  attributes?: Attributes;
+  abilities?: Abilities;
   inspiration?: number;
   savingThrows?: SavingThrows;
   skills?: Skill[];
@@ -152,8 +152,8 @@ export type Character = {
   equipment?: Equipment;
   description?: Description;
   alliesAndAssociations?: Ally;
-  additionalFeatures?: [string];
-  treasure?: [string];
+  additionalFeatures?: string[];
+  treasure?: string[];
   spells?: SpellSheet;
 };
 

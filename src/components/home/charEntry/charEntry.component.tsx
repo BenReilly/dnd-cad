@@ -1,14 +1,16 @@
-import { useContext, useState, useEffect, ChangeEvent, FormEvent, useRef } from 'react';
+import { useContext, useRef, useState, FormEvent } from 'react';
 import { Button } from '@mui/material';
-import { SelectChangeEvent } from '@mui/material/Select';
 import CharacterIdentityFields from './fields/CharacterIdentityFields';
 import CharacterRaceFields from './fields/CharacterRaceFields';
 import CharacterClassFields from './fields/CharacterClassFields';
 import CharacterCombatStatsFields from './fields/CharacterCombatStatsFields';
-import CharacterAttributeFields from './fields/CharacterAttributeFields';
-import CharacterSkillFields, { CharacterSkillFieldsHandle } from './fields/CharacterSkillFields';
+import { AttackFieldErrors } from './fields/CharacterAttackFields';
+import CharacterAbilitiesSection, {
+  CharacterAbilitiesSectionHandle,
+} from './fields/CharacterAbilitiesSection';
+import CharSheetVerticalTabs from '../../library/tabs/CharSheetVerticalTabs';
 
-import { Attributes, ClassDescription, RaceAndClassContextType, BackgroundContextType, Race, CharClassFormat, HitDie, Character, Skill, SkillsContextType } from '../../../types/Characters.Types';
+import { ClassDescription, RaceAndClassContextType, BackgroundContextType, Race, CharClassFormat, HitDie, Character, Abilities, Skill, SkillsContextType, Attack } from '../../../types/Characters.Types';
 import { RaceClassContext } from '../../../contexts/racesAndClasses.context';
 import { BackgroundsContext, SkillsContext } from '../../../contexts/characterOptions.context.tsx';
 
@@ -36,6 +38,7 @@ const CharEntry = () => {
   const [name, setName] = useState('');
   const [nameTouched, setNameTouched] = useState(false);
   const [nameError, setNameError] = useState('');
+  const [xp, setXp] = useState<number | null>(null);
   const [raceSelectionState, setRaceSelectionState] = useState('');
   // Custom setter for raceSelection to auto-set subraceSelection
   const setRaceSelection = (value: string) => {
@@ -53,19 +56,14 @@ const CharEntry = () => {
   const [classDescriptions, setClassDescriptions] = useState<
     ClassDescription[]
   >([emptyClassDescription()]);
-  const [totalLevel, setTotalLevel] = useState<number>(() =>
-    classDescriptions.reduce((sum, cd) => sum + (cd.level ?? 1), 0),
-  );
-  const [proficiencyBonus, setProficiencyBonus] = useState<number>(
-    Math.floor((totalLevel - 1) / 4) + 2,
-  );
   const [background, setBackground] = useState('');
   const [ac, setAc] = useState<number | null>(null);
   const [initiative, setInitiative] = useState<number | null>(null);
   const [speed, setSpeed] = useState<number | null>(null);
   const [inspiration, setInspiration] = useState<number | null>(null);
   const [formError, setFormError] = useState('');
-  const [attributes, setAttributes] = useState<{ [K in keyof Attributes]: number | null }>({
+  const [attackFormError, setAttackFormError] = useState('');
+  const [abilities, setAbilities] = useState<{ [K in keyof Abilities]: number | null }>({
     str: 10,
     dex: 10,
     con: 10,
@@ -73,14 +71,33 @@ const CharEntry = () => {
     wis: 10,
     cha: 10,
   });
-  const [attributeErrors, setAttributeErrors] = useState<Record<string, boolean>>({});
-  const [attributeFormError, setAttributeFormError] = useState('');
+  const [abilityErrors, setAbilityErrors] = useState<Record<string, boolean>>({});
+  const [abilityFormError, setAbilityFormError] = useState('');
+  const [activeTab, setActiveTab] = useState(0);
+  const abilitiesSectionRef = useRef<CharacterAbilitiesSectionHandle>(null);
 
   // Hit Dice state
   const hitDieSizes = ['6', '8', '10', '12'];
+  const attackDamageSizes = ['4', '6', '8', '10', '12', '20'];
   const emptyHitDie = (): HitDie => ({ qty: 0, die: 0 });
   const [hitDice, setHitDice] = useState<HitDie[]>([emptyHitDie()]);
   const [hitDiceTouched, setHitDiceTouched] = useState<boolean[]>([false]);
+  const emptyAttack = (): Attack => ({
+    name: '',
+    attackBonus: null,
+    damage: '',
+    normalRange: null,
+    longRange: null,
+    type: '',
+  });
+  const emptyAttackFieldErrors = (): AttackFieldErrors => ({
+    name: false,
+    attackBonus: false,
+    damage: false,
+    type: false,
+  });
+  const [attacks, setAttacks] = useState<Attack[]>([emptyAttack()]);
+  const [attackFieldErrors, setAttackFieldErrors] = useState<AttackFieldErrors[]>([emptyAttackFieldErrors()]);
   // Hit Dice handlers
   const handleHitDieQtyChange = (index: number, value: number | null) => {
     setHitDice((prev) => prev.map((hd, i) => i === index ? { ...hd, qty: value ?? 0 } : hd));
@@ -95,8 +112,125 @@ const CharEntry = () => {
   const setHitDieTouched = (index: number) => {
     setHitDiceTouched((prev) => prev.map((t, i) => i === index ? true : t));
   };
+  const handleAttackNameChange = (index: number, value: string) => {
+    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, name: value } : attack));
+    setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, name: false } : fieldErrors));
+    if (attackFormError) setAttackFormError('');
+  };
+  const handleAttackBonusChange = (index: number, value: number | null) => {
+    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, attackBonus: value } : attack));
+    setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, attackBonus: false } : fieldErrors));
+    if (attackFormError) setAttackFormError('');
+  };
+  const handleAttackTypeChange = (index: number, value: string) => {
+    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, type: value } : attack));
+    setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, type: false } : fieldErrors));
+    if (attackFormError) setAttackFormError('');
+  };
+  const toNullableNumber = (value: string): number | null => {
+    const trimmed = value.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+  const handleAttackNormalRangeChange = (index: number, value: string) => {
+    const parsedRange = toNullableNumber(value);
+    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, normalRange: parsedRange } : attack));
+    if (attackFormError) setAttackFormError('');
+  };
+  const handleAttackLongRangeChange = (index: number, value: string) => {
+    const parsedRange = toNullableNumber(value);
+    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, longRange: parsedRange } : attack));
+    if (attackFormError) setAttackFormError('');
+  };
+  const parseAttackDamage = (damage: string): { qty: number | null; size: string | null; mod: number | null } => {
+    const match = damage.match(/^(\d*)d(\d*)([+-]\d+)?$/);
+    if (!match) {
+      return { qty: null, size: null, mod: null };
+    }
+    return {
+      qty: match[1] ? parseInt(match[1], 10) : null,
+      size: match[2] ? match[2] : null,
+      mod: match[3] ? parseInt(match[3], 10) : null,
+    };
+  };
+  const buildAttackDamage = (qty: number | null, size: string | null, mod: number | null): string => {
+    const hasQty = qty !== null && qty > 0;
+    const cleanedSize = size && size.trim().length > 0 ? size.trim() : null;
+    const hasSize = cleanedSize !== null;
+    const hasMod = mod !== null && mod !== 0;
 
-  const skillFieldsRef = useRef<CharacterSkillFieldsHandle>(null);
+    if (!hasQty && !hasSize && !hasMod) {
+      return '';
+    }
+
+    const qtyPart = hasQty ? String(Math.floor(qty as number)) : '';
+    const modValue = hasMod ? Math.trunc(mod as number) : null;
+    const modPart = modValue === null ? '' : `${modValue > 0 ? '+' : ''}${modValue}`;
+    let sizePart = '';
+    if (hasSize) {
+      const normalizedSize = parseInt(cleanedSize as string, 10);
+      if (Number.isNaN(normalizedSize)) {
+        return `${qtyPart}d${modPart}`;
+      }
+      sizePart = String(normalizedSize);
+    }
+
+    return `${qtyPart}d${sizePart}${modPart}`;
+  };
+  const formatAttackDamageForSubmit = (damage: string): string => {
+    const parsed = parseAttackDamage(damage);
+    if (parsed.qty === null || parsed.size === null) {
+      return '';
+    }
+
+    const base = `${parsed.qty}d${parsed.size}`;
+    if (parsed.mod === null) {
+      return base;
+    }
+
+    return `${base}${parsed.mod < 1 ? '' : '+'}${parsed.mod}`;
+  };
+  const handleAttackDamageQtyChange = (index: number, value: number | null) => {
+    setAttacks((prev) => prev.map((attack, i) => {
+      if (i !== index) {
+        return attack;
+      }
+      const parsed = parseAttackDamage(attack.damage);
+      return { ...attack, damage: buildAttackDamage(value, parsed.size, parsed.mod) };
+    }));
+    setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, damage: false } : fieldErrors));
+    if (attackFormError) setAttackFormError('');
+  };
+  const handleAttackDamageSizeChange = (index: number, value: string | null) => {
+    setAttacks((prev) => prev.map((attack, i) => {
+      if (i !== index) {
+        return attack;
+      }
+      const parsed = parseAttackDamage(attack.damage);
+      return { ...attack, damage: buildAttackDamage(parsed.qty, value, parsed.mod) };
+    }));
+    setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, damage: false } : fieldErrors));
+    if (attackFormError) setAttackFormError('');
+  };
+  const handleAttackDamageModChange = (index: number, value: number | null) => {
+    setAttacks((prev) => prev.map((attack, i) => {
+      if (i !== index) {
+        return attack;
+      }
+      const parsed = parseAttackDamage(attack.damage);
+      return { ...attack, damage: buildAttackDamage(parsed.qty, parsed.size, value) };
+    }));
+    setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, damage: false } : fieldErrors));
+    if (attackFormError) setAttackFormError('');
+  };
+  const addAttackRow = () => {
+    setAttacks((prev) => [...prev, emptyAttack()]);
+    setAttackFieldErrors((prev) => [...prev, emptyAttackFieldErrors()]);
+    if (attackFormError) setAttackFormError('');
+  };
 
   const classOptions = Classes.map((classItem: CharClassFormat) => ({
     value: classItem.class_name,
@@ -152,34 +286,6 @@ const CharEntry = () => {
     );
   };
 
-  const handleClassChange = (index: number, event: SelectChangeEvent<unknown>) => {
-    const value = String(event.target.value);
-    if (value === 'other') {
-      setClassDescriptionValue(index, { classSelection: value, subclass: 'other', touched: true });
-    } else {
-      setClassDescriptionValue(index, { classSelection: value, subclass: '', touched: true });
-    }
-  };
-
-  const handleOtherClassChange = (
-    index: number,
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setClassDescriptionValue(index, { otherClassText: event.target.value, otherTouched: true });
-  };
-
-  const handleSubclassChange = (index: number, event: SelectChangeEvent<unknown>) => {
-    const value = String(event.target.value);
-    setClassDescriptionValue(index, { subclass: value, subclassTouched: true });
-  };
-
-  const handleOtherSubclassChange = (
-    index: number,
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    setClassDescriptionValue(index, { subclassOther: event.target.value, otherSubclassTouched: true });
-  };
-
   const handleLevelChange = (
     index: number,
     value: number | null,
@@ -187,52 +293,52 @@ const CharEntry = () => {
     setClassDescriptionValue(index, { level: value });
   };
 
-  const getAttributeModifier = (score: number | null | undefined): number | null => {
+  const getAbilityModifier = (score: number | null | undefined): number | null => {
     if (typeof score !== 'number' || Number.isNaN(score)) return null;
     return Math.floor((score - 10) / 2);
   };
 
-  const attributeModifiers: { [K in keyof Attributes]: number | null } = {
-    str: getAttributeModifier(attributes.str),
-    dex: getAttributeModifier(attributes.dex),
-    con: getAttributeModifier(attributes.con),
-    int: getAttributeModifier(attributes.int),
-    wis: getAttributeModifier(attributes.wis),
-    cha: getAttributeModifier(attributes.cha),
+  const abilityModifiers: { [K in keyof Abilities]: number | null } = {
+    str: getAbilityModifier(abilities.str),
+    dex: getAbilityModifier(abilities.dex),
+    con: getAbilityModifier(abilities.con),
+    int: getAbilityModifier(abilities.int),
+    wis: getAbilityModifier(abilities.wis),
+    cha: getAbilityModifier(abilities.cha),
   };
 
-  const handleAttributeChange = (attribute: keyof Attributes, value: number | null) => {
-    setAttributes((prev) => ({ ...prev, [attribute]: value }));
-    setAttributeErrors((prev) => ({ ...prev, [attribute]: false }));
-    if (attributeFormError) {
-      setAttributeFormError('');
+  const handleAbilityChange = (ability: keyof Abilities, value: number | null) => {
+    setAbilities((prev) => ({ ...prev, [ability]: value }));
+    setAbilityErrors((prev) => ({ ...prev, [ability]: false }));
+    if (abilityFormError) {
+      setAbilityFormError('');
     }
   };
 
-  const validateAttributes = () => {
-    const attrKeys: (keyof Attributes)[] = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
-    const attrValues = attrKeys.map((key) => attributes[key]);
-    const allAttrsBlank = attrValues.every((value) => value === null || value === undefined);
-    const allAttrsInRange = attrValues.every(
+  const validateAbilities = () => {
+    const abilityKeys: (keyof Abilities)[] = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+    const abilityValues = abilityKeys.map((key) => abilities[key]);
+    const allAbilitiesBlank = abilityValues.every((value) => value === null || value === undefined);
+    const allAbilitiesInRange = abilityValues.every(
       (value) => typeof value === 'number' && value >= 1 && value <= 20,
     );
 
-    if (!allAttrsBlank && !allAttrsInRange) {
-      setAttributeFormError(
-        'Either leave all attributes blank or set each attribute to a value between 1 and 20.',
+    if (!allAbilitiesBlank && !allAbilitiesInRange) {
+      setAbilityFormError(
+        'Either leave all abilities blank or set each ability to a value between 1 and 20.',
       );
       const errs: Record<string, boolean> = {};
-      attrKeys.forEach((key) => {
-        const value = attributes[key];
+      abilityKeys.forEach((key) => {
+        const value = abilities[key];
         errs[String(key)] = value === null || value === undefined;
       });
-      setAttributeErrors(errs);
+      setAbilityErrors(errs);
       return false;
     }
 
-    setAttributeFormError('');
-    setAttributeErrors({});
-    return allAttrsBlank ? null : (attributes as Attributes);
+    setAbilityFormError('');
+    setAbilityErrors({});
+    return allAbilitiesBlank ? null : (abilities as Abilities);
   };
 
   const duplicateClassDescription = (index: number) => {
@@ -264,20 +370,8 @@ const CharEntry = () => {
     level: entry.level ?? undefined,
     subclass: entry.subclass === 'other' ? entry.subclassOther : entry.subclass === 'none' ? undefined : entry.subclass || undefined,
   }));
-
-  // Update totalLevel whenever classDescriptions change (use 1 if level is blank)
-  useEffect(() => {
-    const sum = classDescriptions.reduce((acc, cd) => acc + (cd.level ?? 1), 0);
-    console.log('totalLevel', sum);
-    setTotalLevel(sum);
-  }, [classDescriptions]);
-
-  // Update proficiency bonus whenever totalLevel changes
-  useEffect(() => {
-    const pb = Math.floor((totalLevel - 1) / 4) + 2;
-    console.log('proficiencyBonus', pb);
-    setProficiencyBonus(pb);
-  }, [totalLevel]);
+  const totalLevel = classDescriptions.reduce((sum, cd) => sum + (cd.level ?? 1), 0);
+  const proficiencyBonus = Math.floor((totalLevel - 1) / 4) + 2;
 
   const showRaceSelectionError = raceTouched && !raceSelectionState;
   const showOtherRaceError =
@@ -286,6 +380,25 @@ const CharEntry = () => {
     subraceSelection === 'other' &&
     otherSubraceTouched &&
     otherSubraceText.trim() === '';
+
+  const scrollFirstInvalidFieldIntoView = (formElement: HTMLFormElement) => {
+    const scheduleScroll =
+      typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+        ? window.requestAnimationFrame
+        : (callback: FrameRequestCallback) => window.setTimeout(() => callback(0), 0);
+
+    scheduleScroll(() => {
+      const firstInvalidElement = formElement.querySelector<HTMLElement>(
+        '[aria-invalid="true"], .MuiFormHelperText-root.Mui-error, .MuiFormControl-root.Mui-error',
+      );
+
+      firstInvalidElement?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
+    });
+  };
 
   // Hit Dice validation: each row is valid if both fields are blank or both are filled
   const validHitDice = hitDice.filter((hd) => (hd.qty === 0 && hd.die === 0) || (hd.qty > 0 && hitDieSizes.includes(hd.die.toString())));
@@ -340,12 +453,13 @@ const CharEntry = () => {
       hasError = true;
     }
 
-    const attributeValidationResult = validateAttributes();
-    if (attributeValidationResult === false) {
+    const abilityValidationResult = validateAbilities();
+    if (abilityValidationResult === false) {
       hasError = true;
     }
 
     if (hasError) {
+      scrollFirstInvalidFieldIntoView(event.currentTarget);
       return;
     }
 
@@ -367,22 +481,85 @@ const CharEntry = () => {
     // Only attach hitDice with qty > 0 and die > 0
     const filteredHitDice = validHitDice.filter(hd => hd.qty > 0 && hd.die > 0);
     if (filteredHitDice.length > 0) character.hitDice = filteredHitDice;
+    const builtAttacks = attacks.map((attack) => {
+      const nameValue = attack.name.trim();
+      const typeValue = attack.type.trim();
+
+      return {
+        name: nameValue,
+        attackBonus: attack.attackBonus,
+        damage: formatAttackDamageForSubmit(attack.damage),
+        normalRange: attack.normalRange,
+        longRange: attack.longRange,
+        type: typeValue,
+      };
+    });
+    const attackRowsWithInput = builtAttacks.filter(
+      (attack) =>
+        attack.name.length > 0
+        || attack.attackBonus !== null
+        || attack.damage.length > 0
+        || attack.type.length > 0
+        || attack.normalRange !== null
+        || attack.longRange !== null,
+    );
+    const hasInvalidAttackRow = attackRowsWithInput.some(
+      (attack) =>
+        attack.name.length === 0
+        || attack.attackBonus === null
+        || attack.damage.length === 0
+        || attack.type.length === 0,
+    );
+    if (hasInvalidAttackRow) {
+      const nextAttackFieldErrors = builtAttacks.map((attack) => {
+        const rowHasInput =
+          attack.name.length > 0
+          || attack.attackBonus !== null
+          || attack.damage.length > 0
+          || attack.type.length > 0
+          || attack.normalRange !== null
+          || attack.longRange !== null;
+        if (!rowHasInput) {
+          return emptyAttackFieldErrors();
+        }
+
+        return {
+          name: attack.name.length === 0,
+          attackBonus: attack.attackBonus === null,
+          damage: attack.damage.length === 0,
+          type: attack.type.length === 0,
+        };
+      });
+      setAttackFieldErrors(nextAttackFieldErrors);
+      setAttackFormError('Each attack row must include Name, Atk Mod, Damage, and Dmg Type.');
+      scrollFirstInvalidFieldIntoView(event.currentTarget);
+      return;
+    }
+    setAttackFieldErrors(attacks.map(() => emptyAttackFieldErrors()));
+    setAttackFormError('');
+    if (attackRowsWithInput.length > 0) character.attacks = attackRowsWithInput;
     if (background && background.trim()) character.background = background.trim();
+    if (typeof xp === 'number') character.xp = xp;
     if (typeof ac === 'number') character.ac = ac;
     if (typeof initiative === 'number') character.initiative = initiative;
     if (typeof speed === 'number') character.speed = speed;
     if (typeof inspiration === 'number') character.inspiration = inspiration;
-    if (attributeValidationResult && attributeValidationResult !== null) {
-      character.attributes = attributeValidationResult;
+    if (abilityValidationResult && abilityValidationResult !== null) {
+      character.abilities = abilityValidationResult;
     }
 
-    const skillStates = skillFieldsRef.current?.getSkillStates() ?? {};
+    const saveStates = abilitiesSectionRef.current?.getSaveStates();
+    if (saveStates) {
+      character.savingThrows = saveStates;
+    }
+
+    const skillStates = abilitiesSectionRef.current?.getSkillStates() ?? {};
     character.skills = skills.map((skill) => ({
       key: skill.key,
       display: skill.display,
-      attribute: skill.attribute,
+      ability: skill.ability,
       proficient: skillStates[skill.key]?.proficient ?? false,
-      specialized: skillStates[skill.key]?.specialized ?? false,
+      expertise: skillStates[skill.key]?.expertise ?? false,
     }));
 
     console.log(character);
@@ -392,19 +569,6 @@ const CharEntry = () => {
     <div>
       <h3>Character Entry</h3>
       <form noValidate onSubmit={handleSubmit}>
-        <CharacterIdentityFields
-          name={name}
-          setName={setName}
-          nameTouched={nameTouched}
-          setNameTouched={setNameTouched}
-          nameError={nameError}
-          setNameError={setNameError}
-          background={background}
-          setBackground={setBackground}
-          backgroundOptions={backgroundOptions}
-        />
-
-        
         <input type="hidden" name="charId" value={charId} />
         <input type="hidden" name="user_doc" value={user_doc} />
         <input
@@ -421,75 +585,121 @@ const CharEntry = () => {
         )}
         <input type="hidden" name="class" value={JSON.stringify(classArray)} />
         <input type="hidden" name="background" value={background} />
+        <input type="hidden" name="xp" value={xp ?? ''} />
         <input type="hidden" name="ac" value={ac ?? ''} />
         <input type="hidden" name="initiative" value={initiative ?? ''} />
         <input type="hidden" name="speed" value={speed ?? ''} />
         <input type="hidden" name="inspiration" value={inspiration ?? ''} />
-        <CharacterRaceFields
-          raceSelection={raceSelectionState}
-          setRaceSelection={setRaceSelection}
-          raceTouched={raceTouched}
-          setRaceTouched={setRaceTouched}
-          otherRaceText={otherRaceText}
-          setOtherRaceText={setOtherRaceText}
-          otherRaceTouched={otherRaceTouched}
-          setOtherRaceTouched={setOtherRaceTouched}
-          subraceSelection={subraceSelection}
-          setSubraceSelection={setSubraceSelection}
-          otherSubraceText={otherSubraceText}
-          setOtherSubraceText={setOtherSubraceText}
-          otherSubraceTouched={otherSubraceTouched}
-          setOtherSubraceTouched={setOtherSubraceTouched}
-          raceOptions={raceOptions}
-          subraceOptions={subraceOptions}
-          showRaceSelectionError={showRaceSelectionError}
-          showOtherRaceError={showOtherRaceError}
-          showOtherSubraceError={showOtherSubraceError}
-        />
-        <CharacterClassFields
-          classDescriptions={classDescriptions}
-          setClassDescriptionValue={setClassDescriptionValue}
-          handleClassChange={handleClassChange}
-          handleOtherClassChange={handleOtherClassChange}
-          handleSubclassChange={handleSubclassChange}
-          handleOtherSubclassChange={handleOtherSubclassChange}
-          handleLevelChange={handleLevelChange}
-          duplicateClassDescription={duplicateClassDescription}
-          classOptions={classOptions}
-          Classes={Classes}
-          formError={formError}
-        />
-        <CharacterCombatStatsFields
-          ac={ac}
-          setAc={setAc}
-          initiative={initiative}
-          setInitiative={setInitiative}
-          speed={speed}
-          setSpeed={setSpeed}
-          inspiration={inspiration}
-          setInspiration={setInspiration}
-          hitDice={hitDice}
-          hitDiceTouched={hitDiceTouched}
-          handleHitDieQtyChange={handleHitDieQtyChange}
-          handleHitDieDieChange={handleHitDieDieChange}
-          addHitDieRow={addHitDieRow}
-          setHitDieTouched={setHitDieTouched}
-          hitDieSizes={hitDieSizes}
-        />
+        <CharSheetVerticalTabs
+          value={activeTab}
+          onChange={setActiveTab}
+          ariaLabel="Character entry sections"
+          idPrefix="char-entry-tabs"
+          tabs={[
+            {
+              label: 'General',
+              content: (
+                <>
+                  <CharacterIdentityFields
+                    name={name}
+                    setName={setName}
+                    nameTouched={nameTouched}
+                    setNameTouched={setNameTouched}
+                    nameError={nameError}
+                    setNameError={setNameError}
+                    xp={xp}
+                    setXp={setXp}
+                    background={background}
+                    setBackground={setBackground}
+                    backgroundOptions={backgroundOptions}
+                  />
 
-        <CharacterAttributeFields
-          attributes={attributes}
-          modifiers={attributeModifiers}
-          onAttributeChange={handleAttributeChange}
-          attributeErrors={attributeErrors}
-          formError={attributeFormError}
-        />
+                  <CharacterRaceFields
+                    raceSelection={raceSelectionState}
+                    setRaceSelection={setRaceSelection}
+                    setRaceTouched={setRaceTouched}
+                    otherRaceText={otherRaceText}
+                    setOtherRaceText={setOtherRaceText}
+                    otherRaceTouched={otherRaceTouched}
+                    setOtherRaceTouched={setOtherRaceTouched}
+                    subraceSelection={subraceSelection}
+                    setSubraceSelection={setSubraceSelection}
+                    otherSubraceText={otherSubraceText}
+                    setOtherSubraceText={setOtherSubraceText}
+                    otherSubraceTouched={otherSubraceTouched}
+                    setOtherSubraceTouched={setOtherSubraceTouched}
+                    raceOptions={raceOptions}
+                    subraceOptions={subraceOptions}
+                    showRaceSelectionError={showRaceSelectionError}
+                    showOtherRaceError={showOtherRaceError}
+                    showOtherSubraceError={showOtherSubraceError}
+                  />
 
-        <CharacterSkillFields
-          ref={skillFieldsRef}
-          skills={skills}
-          attributeModifiers={attributeModifiers}
-          proficiencyBonus={proficiencyBonus}
+                  <CharacterClassFields
+                    classDescriptions={classDescriptions}
+                    setClassDescriptionValue={setClassDescriptionValue}
+                    handleLevelChange={handleLevelChange}
+                    duplicateClassDescription={duplicateClassDescription}
+                    classOptions={classOptions}
+                    Classes={Classes}
+                    formError={formError}
+                  />
+                </>
+              ),
+            },
+            {
+              label: 'Abilities',
+              content: (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <CharacterAbilitiesSection
+                    ref={abilitiesSectionRef}
+                    abilities={abilities}
+                    abilityModifiers={abilityModifiers}
+                    onAbilityChange={handleAbilityChange}
+                    skills={skills}
+                    proficiencyBonus={proficiencyBonus}
+                    abilityErrors={abilityErrors}
+                    formError={abilityFormError}
+                  />
+                </div>
+              ),
+            },
+            {
+              label: 'Combat',
+              content: (
+                <CharacterCombatStatsFields
+                  ac={ac}
+                  setAc={setAc}
+                  initiative={initiative}
+                  setInitiative={setInitiative}
+                  speed={speed}
+                  setSpeed={setSpeed}
+                  inspiration={inspiration}
+                  setInspiration={setInspiration}
+                  hitDice={hitDice}
+                  hitDiceTouched={hitDiceTouched}
+                  handleHitDieQtyChange={handleHitDieQtyChange}
+                  handleHitDieDieChange={handleHitDieDieChange}
+                  addHitDieRow={addHitDieRow}
+                  setHitDieTouched={setHitDieTouched}
+                  hitDieSizes={hitDieSizes}
+                  attacks={attacks}
+                  handleAttackNameChange={handleAttackNameChange}
+                  handleAttackBonusChange={handleAttackBonusChange}
+                  handleAttackTypeChange={handleAttackTypeChange}
+                  handleAttackNormalRangeChange={handleAttackNormalRangeChange}
+                  handleAttackLongRangeChange={handleAttackLongRangeChange}
+                  handleAttackDamageQtyChange={handleAttackDamageQtyChange}
+                  handleAttackDamageSizeChange={handleAttackDamageSizeChange}
+                  handleAttackDamageModChange={handleAttackDamageModChange}
+                  attackFieldErrors={attackFieldErrors}
+                  attackFormError={attackFormError}
+                  attackDamageSizes={attackDamageSizes}
+                  addAttackRow={addAttackRow}
+                />
+              ),
+            },
+          ]}
         />
 
         <div style={{ marginTop: '20px' }}>

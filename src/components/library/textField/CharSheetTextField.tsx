@@ -61,7 +61,7 @@ const CharSheetTextField: React.FC<CharSheetTextFieldProps> = ({
         '& .MuiOutlinedInput-notchedOutline': {
           borderColor: '#ccc',
         },
-        '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+        '& .MuiOutlinedInput-root:not(.Mui-disabled):hover .MuiOutlinedInput-notchedOutline': {
           borderColor: '#ccc',
         },
         '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {

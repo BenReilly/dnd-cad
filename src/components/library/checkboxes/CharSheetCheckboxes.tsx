@@ -6,6 +6,7 @@ import {
   Box,
   FormLabel,
 } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import type { FormControlLabelProps } from '@mui/material/FormControlLabel';
 
 interface BoxConfig {
@@ -13,6 +14,8 @@ interface BoxConfig {
   label: string;
   checked: boolean;
   disabled?: boolean;
+  ariaLabel?: string;
+  visualLabel?: ReactNode;
 }
 
 interface CharSheetCheckboxesProps {
@@ -26,6 +29,7 @@ interface CharSheetCheckboxesProps {
   suffixComponent?: ReactNode;
   labelWidth?: string | number;
   disabled?: boolean;
+  labelSx?: SxProps<Theme>;
 }
 
 const CharSheetCheckboxes: React.FC<CharSheetCheckboxesProps> = ({
@@ -39,6 +43,7 @@ const CharSheetCheckboxes: React.FC<CharSheetCheckboxesProps> = ({
   suffixComponent,
   labelWidth,
   disabled = false,
+  labelSx,
 }) => {
   // Generate main ID if not provided
   const mainId = id || label.replace(/\s+/g, '-').toLowerCase();
@@ -75,6 +80,7 @@ const CharSheetCheckboxes: React.FC<CharSheetCheckboxesProps> = ({
               minWidth: labelWidth ?? 'auto',
               width: labelWidth ?? 'auto',
               whiteSpace: 'nowrap',
+              ...labelSx,
             }}
           >
             {label}
@@ -93,6 +99,7 @@ const CharSheetCheckboxes: React.FC<CharSheetCheckboxesProps> = ({
                   checked={isChecked}
                   onChange={() => handleCheckboxChange(checkboxId)}
                   disabled={box.disabled ?? disabled}
+                  inputProps={box.ariaLabel ? { 'aria-label': box.ariaLabel } : undefined}
                   sx={{
                     color: '#ccc',
                     '&.Mui-checked': {
@@ -104,7 +111,7 @@ const CharSheetCheckboxes: React.FC<CharSheetCheckboxesProps> = ({
                   }}
                 />
               }
-              label={box.label}
+              label={box.visualLabel ?? box.label}
               labelPlacement={labelPlacement}
               sx={{
                 '& .MuiFormControlLabel-label': {

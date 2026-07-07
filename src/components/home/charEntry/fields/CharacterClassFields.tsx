@@ -1,26 +1,53 @@
-import { Fragment, ChangeEvent } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import AddIcon from '@mui/icons-material/Add';
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
-import CharSheetSelect from '../../../library/select/CharSheetSelect';
+import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharSheetTextField from '../../../library/textField/CharSheetTextField';
-import { SelectChangeEvent } from '@mui/material/Select';
 import { ClassDescription, CharClassFormat } from '../../../../types/Characters.Types';
+
+type Option = { value: string; label: string };
+
+const normalize = (value: string) => value.trim().toLowerCase();
+
+const findMatchingOption = (input: string, options: Option[]) =>
+  options.find(
+    (option) => normalize(option.label) === normalize(input) || normalize(option.value) === normalize(input),
+  );
+
+const findBestMatchingOption = (input: string, options: Option[]) => {
+  const normalizedInput = normalize(input);
+  if (!normalizedInput) {
+    return undefined;
+  }
+
+  return (
+    findMatchingOption(input, options) ||
+    options.find(
+      (option) =>
+        normalize(option.label).startsWith(normalizedInput) ||
+        normalize(option.value).startsWith(normalizedInput),
+    ) ||
+    options.find(
+      (option) =>
+        normalize(option.label).includes(normalizedInput) ||
+        normalize(option.value).includes(normalizedInput),
+    )
+  );
+};
+
+const selectionToInputValue = (selection: string) => {
+  if (!selection) {
+    return '';
+  }
+
+  return selection === 'other' ? 'Other' : selection === 'none' ? 'None' : selection;
+};
 
 interface CharacterClassFieldsProps {
   classDescriptions: ClassDescription[];
   setClassDescriptionValue: (
     index: number,
     values: Partial<ClassDescription>
-  ) => void;
-  handleClassChange: (index: number, event: SelectChangeEvent<unknown>) => void;
-  handleOtherClassChange: (
-    index: number,
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => void;
-  handleSubclassChange: (index: number, event: SelectChangeEvent<unknown>) => void;
-  handleOtherSubclassChange: (
-    index: number,
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
   handleLevelChange: (index: number, value: number | null) => void;
   duplicateClassDescription: (index: number) => void;
@@ -50,16 +77,125 @@ const styles: { [key: string]: React.CSSProperties } = {
 const CharacterClassFields = ({
   classDescriptions,
   setClassDescriptionValue,
-  handleClassChange,
-  handleOtherClassChange,
-  handleSubclassChange,
-  handleOtherSubclassChange,
   handleLevelChange,
   duplicateClassDescription,
   classOptions,
   Classes,
   formError,
 }: CharacterClassFieldsProps) => {
+  const classOptionsWithOther = [...classOptions, { value: 'other', label: 'Other' }];
+  const [classInputValues, setClassInputValues] = useState<string[]>(() =>
+    classDescriptions.map((entry) => selectionToInputValue(entry.classSelection)),
+  );
+  const [subclassInputValues, setSubclassInputValues] = useState<string[]>(() =>
+    classDescriptions.map((entry) => selectionToInputValue(entry.subclass)),
+  );
+
+  useEffect(() => {
+    setClassInputValues((current) => {
+      if (current.length === classDescriptions.length) {
+        return current;
+      }
+
+      return classDescriptions.map((_, index) => current[index] ?? '');
+    });
+    setSubclassInputValues((current) => {
+      if (current.length === classDescriptions.length) {
+        return current;
+      }
+
+      return classDescriptions.map((_, index) => current[index] ?? '');
+    });
+  }, [classDescriptions]);
+
+  const getSubclassOptions = (entry: ClassDescription) => {
+    if (entry.classSelection === 'other') {
+      return [
+        { value: 'none', label: 'None' },
+        { value: 'other', label: 'Other' },
+      ];
+    }
+
+    if (!entry.classSelection) {
+      return [];
+    }
+
+    const selectedClass = Classes.find((c: CharClassFormat) => c.class_name === entry.classSelection);
+    const subclassOptions =
+      selectedClass?.subclasses?.map((sub: string) => ({
+        value: sub,
+        label: selectedClass.subclass_format
+          ? selectedClass.subclass_format.replace('<subclass>', sub).replace('<subclass_title>', selectedClass.subclass_title || '')
+          : sub,
+      })) || [];
+
+    return [
+      { value: 'none', label: 'None' },
+      ...subclassOptions.sort((a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label)),
+      { value: 'other', label: 'Other' },
+    ];
+  };
+
+  const commitClassInput = (index: number) => {
+    const inputValue = classInputValues[index]?.trim();
+    if (!inputValue) {
+      setClassDescriptionValue(index, { touched: true });
+      return;
+    }
+
+    const matchingOption = findBestMatchingOption(inputValue, classOptionsWithOther);
+    if (matchingOption) {
+      setClassDescriptionValue(
+        index,
+        matchingOption.value === 'other'
+          ? { classSelection: 'other', otherClassText: '', subclass: 'other', subclassOther: '', touched: true }
+          : { classSelection: matchingOption.value, otherClassText: '', subclass: '', subclassOther: '', touched: true },
+      );
+      setClassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? matchingOption.label : value)));
+      setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? (matchingOption.value === 'other' ? 'Other' : '') : value)));
+      return;
+    }
+
+    setClassDescriptionValue(index, {
+      classSelection: 'other',
+      otherClassText: inputValue,
+      subclass: 'other',
+      subclassOther: '',
+      touched: true,
+      otherTouched: true,
+    });
+    setClassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? 'Other' : value)));
+    setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? 'Other' : value)));
+  };
+
+  const commitSubclassInput = (index: number, entry: ClassDescription) => {
+    const inputValue = subclassInputValues[index]?.trim();
+    if (!inputValue) {
+      setClassDescriptionValue(index, { subclassTouched: true });
+      return;
+    }
+
+    const matchingOption = findBestMatchingOption(inputValue, getSubclassOptions(entry));
+    if (matchingOption) {
+      setClassDescriptionValue(
+        index,
+        matchingOption.value === 'other'
+          ? { subclass: 'other', subclassOther: '', subclassTouched: true, otherSubclassTouched: true }
+          : { subclass: matchingOption.value, subclassOther: '', subclassTouched: true, otherSubclassTouched: false },
+      );
+      setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? matchingOption.label : value)));
+      return;
+    }
+
+    setClassDescriptionValue(index, {
+      subclass: 'other',
+      subclassOther: inputValue,
+      subclassTouched: true,
+      otherSubclassTouched: true,
+    });
+    setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? 'Other' : value)));
+  };
+
   return (
     <>
       {classDescriptions.map((entry, index) => {
@@ -71,6 +207,9 @@ const CharacterClassFields = ({
         // Only show subclass errors if classSelection is NOT 'other'
         const showOtherSubclassError =
           entry.classSelection !== 'other' && entry.subclass === 'other' && entry.otherSubclassTouched && entry.subclassOther.trim() === '';
+        const subclassOptions = getSubclassOptions(entry);
+        const selectedClassOption = findMatchingOption(entry.classSelection, classOptionsWithOther) ?? null;
+        const selectedSubclassOption = findMatchingOption(entry.subclass, subclassOptions) ?? null;
         return (
           <Fragment key={`characterClass${index}`}>
             <div
@@ -79,13 +218,46 @@ const CharacterClassFields = ({
             >
               <div style={styles.flexRow}>
                 <div style={styles.flexColumn}>
-                  <CharSheetSelect
-                    value={entry.classSelection}
-                    onChange={(event) => handleClassChange(index, event)}
-                    onBlur={() => setClassDescriptionValue(index, { touched: true })}
+                  <CharSheetAutocomplete
+                    value={selectedClassOption}
+                    inputValue={classInputValues[index] ?? selectionToInputValue(entry.classSelection)}
+                    onInputChange={(_, newInputValue, reason) => {
+                      setClassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? newInputValue : value)));
+                      if (reason === 'input' && entry.classSelection === 'other') {
+                        setClassDescriptionValue(index, {
+                          classSelection: '',
+                          otherClassText: '',
+                          subclass: '',
+                          subclassOther: '',
+                          otherTouched: false,
+                          subclassTouched: false,
+                          otherSubclassTouched: false,
+                        });
+                        setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? '' : value)));
+                      }
+                    }}
+                    onChange={(_, newValue) => {
+                      const selectedValue = newValue && typeof newValue === 'object' ? newValue.value : '';
+                      const selectedLabel = newValue && typeof newValue === 'object' ? newValue.label : '';
+                      setClassDescriptionValue(
+                        index,
+                        selectedValue === 'other'
+                          ? { classSelection: 'other', otherClassText: '', subclass: 'other', subclassOther: '', touched: true }
+                          : { classSelection: selectedValue, otherClassText: '', subclass: '', subclassOther: '', touched: true },
+                      );
+                      setClassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? selectedLabel : value)));
+                      setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? (selectedValue === 'other' ? 'Other' : '') : value)));
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => {
+                        commitClassInput(index);
+                      }, 0);
+                    }}
                     label="Character Class*"
                     fieldSize="medium"
-                    options={[...classOptions, { value: 'other', label: 'Other' }]}
+                    options={classOptionsWithOther}
+                    getOptionLabel={(option) => option.label}
+                    isOptionEqualToValue={(option, value) => option.value === value.value}
                     error={showClassSelectionError || showOtherClassError || showLevelWithoutClassError}
                     helperText={
                       showClassSelectionError
@@ -100,7 +272,7 @@ const CharacterClassFields = ({
                   {entry.classSelection === 'other' && (
                     <CharSheetTextField
                       value={entry.otherClassText}
-                      onChange={(event) => handleOtherClassChange(index, event)}
+                      onChange={(event) => setClassDescriptionValue(index, { otherClassText: event.target.value, otherTouched: true })}
                       onBlur={() => setClassDescriptionValue(index, { otherTouched: true })}
                       label="Other Class Name*"
                       variant="outlined"
@@ -122,43 +294,48 @@ const CharacterClassFields = ({
                   />
                 </div>
                 <div style={styles.flexColumn}>
-                  <CharSheetSelect
-                    value={entry.subclass}
-                    onChange={(event) => handleSubclassChange(index, event)}
-                    onBlur={() => setClassDescriptionValue(index, { subclassTouched: true })}
+                  <CharSheetAutocomplete
+                    value={selectedSubclassOption}
+                    inputValue={subclassInputValues[index] ?? selectionToInputValue(entry.subclass)}
+                    onInputChange={(_, newInputValue, reason) => {
+                      setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? newInputValue : value)));
+                      if (reason === 'input' && entry.subclass === 'other') {
+                        setClassDescriptionValue(index, {
+                          subclass: '',
+                          subclassOther: '',
+                          otherSubclassTouched: false,
+                        });
+                      }
+                    }}
+                    onChange={(_, newValue) => {
+                      const selectedValue = newValue && typeof newValue === 'object' ? newValue.value : '';
+                      const selectedLabel = newValue && typeof newValue === 'object' ? newValue.label : '';
+                      setClassDescriptionValue(
+                        index,
+                        selectedValue === 'other'
+                          ? { subclass: 'other', subclassOther: '', subclassTouched: true, otherSubclassTouched: true }
+                          : { subclass: selectedValue, subclassOther: '', subclassTouched: true, otherSubclassTouched: false },
+                      );
+                      setSubclassInputValues((current) => current.map((value, valueIndex) => (valueIndex === index ? selectedLabel : value)));
+                    }}
+                    onBlur={() => {
+                      setTimeout(() => {
+                        commitSubclassInput(index, entry);
+                      }, 0);
+                    }}
                     label="Subclass"
                     fieldSize="medium"
                     disabled={!entry.classSelection}
-                    options={
-                      entry.classSelection === 'other'
-                        ? [{ value: 'none', label: 'None' }, { value: 'other', label: 'Other' }]
-                        : entry.classSelection && entry.classSelection !== 'other'
-                        ? (() => {
-                            const selectedClass = Classes.find((c: CharClassFormat) => c.class_name === entry.classSelection);
-                            const subclassOptions =
-                              selectedClass?.subclasses?.map((sub: string) => ({
-                                value: sub,
-                                label: selectedClass.subclass_format
-                                  ? selectedClass.subclass_format
-                                      .replace('<subclass>', sub)
-                                      .replace('<subclass_title>', selectedClass.subclass_title || '')
-                                  : sub,
-                              })) || [];
-                            return [
-                              { value: 'none', label: 'None' },
-                              ...subclassOptions.sort((a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label)),
-                              { value: 'other', label: 'Other' },
-                            ];
-                          })()
-                        : []
-                    }
+                    options={subclassOptions}
+                    getOptionLabel={(option) => option.label}
+                    isOptionEqualToValue={(option, value) => option.value === value.value}
                     error={showOtherSubclassError}
                     helperText={showOtherSubclassError ? 'Please enter a subclass name when Other is selected.' : undefined}
                   />
                   {entry.subclass === 'other' && (
                     <CharSheetTextField
                       value={entry.subclassOther}
-                      onChange={(event) => handleOtherSubclassChange(index, event)}
+                      onChange={(event) => setClassDescriptionValue(index, { subclassOther: event.target.value, otherSubclassTouched: true })}
                       onBlur={() => setClassDescriptionValue(index, { otherSubclassTouched: true })}
                       label="Other Subclass Name*"
                       variant="outlined"

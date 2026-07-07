@@ -1,12 +1,40 @@
-import { ChangeEvent } from 'react';
-import CharSheetSelect from '../../../library/select/CharSheetSelect';
+import { ChangeEvent, useState } from 'react';
+import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharSheetTextField from '../../../library/textField/CharSheetTextField';
-import { SelectChangeEvent } from '@mui/material/Select';
+
+type Option = { value: string; label: string };
+
+const normalize = (value: string) => value.trim().toLowerCase();
+
+const findMatchingOption = (input: string, options: Option[]) =>
+  options.find(
+    (option) => normalize(option.label) === normalize(input) || normalize(option.value) === normalize(input),
+  );
+
+const findBestMatchingOption = (input: string, options: Option[]) => {
+  const normalizedInput = normalize(input);
+  if (!normalizedInput) {
+    return undefined;
+  }
+
+  return (
+    findMatchingOption(input, options) ||
+    options.find(
+      (option) =>
+        normalize(option.label).startsWith(normalizedInput) ||
+        normalize(option.value).startsWith(normalizedInput),
+    ) ||
+    options.find(
+      (option) =>
+        normalize(option.label).includes(normalizedInput) ||
+        normalize(option.value).includes(normalizedInput),
+    )
+  );
+};
 
 export interface CharacterRaceFieldsProps {
   raceSelection: string;
   setRaceSelection: (race: string) => void;
-  raceTouched: boolean;
   setRaceTouched: (touched: boolean) => void;
   otherRaceText: string;
   setOtherRaceText: (text: string) => void;
@@ -28,7 +56,6 @@ export interface CharacterRaceFieldsProps {
 const CharacterRaceFields = ({
   raceSelection,
   setRaceSelection,
-  raceTouched,
   setRaceTouched,
   otherRaceText,
   setOtherRaceText,
@@ -45,22 +72,10 @@ const CharacterRaceFields = ({
   showOtherRaceError,
   showOtherSubraceError,
 }: CharacterRaceFieldsProps) => {
-  const handleRaceChange = (event: SelectChangeEvent<unknown>) => {
-    const value = String(event.target.value);
-    setRaceSelection(value);
-    setOtherRaceText('');
-    setOtherRaceTouched(false);
-    if (value === 'other') {
-      setSubraceSelection('other');
-    } else {
-      setSubraceSelection('');
-    }
-    setOtherSubraceText('');
-    setOtherSubraceTouched(false);
-    if (raceTouched) {
-      // keep race error state derived from touch + selection
-    }
-  };
+  const raceOptionsWithOther = [...raceOptions, { value: 'other', label: 'Other' }];
+  const subraceOptionsWithOther = [{ value: 'none', label: 'None' }, ...subraceOptions, { value: 'other', label: 'Other' }];
+  const [raceInputValue, setRaceInputValue] = useState(raceSelection === 'other' ? 'Other' : raceSelection);
+  const [subraceInputValue, setSubraceInputValue] = useState(subraceSelection === 'other' ? 'Other' : subraceSelection);
 
   const handleOtherRaceChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.value;
@@ -70,11 +85,61 @@ const CharacterRaceFields = ({
     }
   };
 
-  const handleSubraceChange = (event: SelectChangeEvent<unknown>) => {
-    const value = String(event.target.value);
-    setSubraceSelection(value);
+  const commitRaceSelection = () => {
+    const trimmedInput = raceInputValue.trim();
+    if (!trimmedInput) {
+      return;
+    }
+
+    const matchingOption = findBestMatchingOption(trimmedInput, raceOptionsWithOther);
+    if (matchingOption) {
+      setRaceSelection(matchingOption.value);
+      setRaceInputValue(matchingOption.label);
+      setOtherRaceText('');
+      setOtherRaceTouched(false);
+      if (matchingOption.value === 'other') {
+        setSubraceSelection('other');
+        setSubraceInputValue('Other');
+      } else {
+        setSubraceSelection('');
+        setSubraceInputValue('');
+        setOtherSubraceText('');
+        setOtherSubraceTouched(false);
+      }
+      return;
+    }
+
+    setRaceSelection('other');
+    setRaceInputValue('Other');
+    setOtherRaceText(trimmedInput);
+    setOtherRaceTouched(true);
+    setSubraceSelection('other');
+    setSubraceInputValue('Other');
     setOtherSubraceText('');
     setOtherSubraceTouched(false);
+  };
+
+  const commitSubraceSelection = () => {
+    const trimmedInput = subraceInputValue.trim();
+    if (!trimmedInput) {
+      return;
+    }
+
+    const matchingOption = findBestMatchingOption(trimmedInput, subraceOptionsWithOther);
+    if (matchingOption) {
+      setSubraceSelection(matchingOption.value);
+      setSubraceInputValue(matchingOption.label);
+      if (matchingOption.value !== 'other') {
+        setOtherSubraceText('');
+        setOtherSubraceTouched(false);
+      }
+      return;
+    }
+
+    setSubraceSelection('other');
+    setSubraceInputValue('Other');
+    setOtherSubraceText(trimmedInput);
+    setOtherSubraceTouched(true);
   };
 
   const handleOtherSubraceChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -84,13 +149,50 @@ const CharacterRaceFields = ({
   return (
     <div className="raceDescription" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '20px', padding: '8px' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
-        <CharSheetSelect
-          value={raceSelection}
-          onChange={handleRaceChange}
-          onBlur={() => setRaceTouched(true)}
+        <CharSheetAutocomplete
+          value={findMatchingOption(raceSelection, raceOptionsWithOther) ?? null}
+          inputValue={raceInputValue}
+          onInputChange={(_, newInputValue, reason) => {
+            setRaceInputValue(newInputValue);
+            if (reason === 'input' && raceSelection === 'other') {
+              setRaceSelection('');
+              setOtherRaceText('');
+              setOtherRaceTouched(false);
+              setSubraceSelection('');
+              setSubraceInputValue('');
+              setOtherSubraceText('');
+              setOtherSubraceTouched(false);
+            }
+          }}
+          onChange={(_, newValue) => {
+            const selectedValue = newValue && typeof newValue === 'object' ? newValue.value : '';
+            const selectedLabel = newValue && typeof newValue === 'object' ? newValue.label : '';
+            setRaceSelection(selectedValue);
+            setRaceInputValue(selectedLabel);
+            setRaceTouched(true);
+            setOtherRaceText('');
+            setOtherRaceTouched(false);
+            if (selectedValue === 'other') {
+              setSubraceSelection('other');
+              setSubraceInputValue('Other');
+            } else {
+              setSubraceSelection('');
+              setSubraceInputValue('');
+              setOtherSubraceText('');
+              setOtherSubraceTouched(false);
+            }
+          }}
+          onBlur={() => {
+            setRaceTouched(true);
+            setTimeout(() => {
+              commitRaceSelection();
+            }, 0);
+          }}
           label="Race*"
           fieldSize="medium"
-          options={[...raceOptions, { value: 'other', label: 'Other' }]}
+          options={raceOptionsWithOther}
+          getOptionLabel={(option) => option.label}
+          isOptionEqualToValue={(option, value) => option.value === value.value}
           error={showRaceSelectionError || showOtherRaceError}
           helperText={
             showRaceSelectionError
@@ -114,13 +216,39 @@ const CharacterRaceFields = ({
         )}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
-        <CharSheetSelect
-          value={subraceSelection}
-          onChange={handleSubraceChange}
-          onBlur={() => setOtherSubraceTouched(true)}
+        <CharSheetAutocomplete
+          value={findMatchingOption(subraceSelection, subraceOptionsWithOther) ?? null}
+          inputValue={subraceInputValue}
+          onInputChange={(_, newInputValue, reason) => {
+            setSubraceInputValue(newInputValue);
+            if (reason === 'input' && subraceSelection === 'other') {
+              setSubraceSelection('');
+              setOtherSubraceText('');
+              setOtherSubraceTouched(false);
+            }
+          }}
+          onChange={(_, newValue) => {
+            const selectedValue = newValue && typeof newValue === 'object' ? newValue.value : '';
+            const selectedLabel = newValue && typeof newValue === 'object' ? newValue.label : '';
+            setSubraceSelection(selectedValue);
+            setSubraceInputValue(selectedLabel);
+            setOtherSubraceTouched(true);
+            if (selectedValue !== 'other') {
+              setOtherSubraceText('');
+              setOtherSubraceTouched(false);
+            }
+          }}
+          onBlur={() => {
+            setOtherSubraceTouched(true);
+            setTimeout(() => {
+              commitSubraceSelection();
+            }, 0);
+          }}
           label="Subrace"
           fieldSize="medium"
-          options={[{ value: 'none', label: 'None' }, ...subraceOptions, { value: 'other', label: 'Other' }]}
+          options={subraceOptionsWithOther}
+          getOptionLabel={(option) => option.label}
+          isOptionEqualToValue={(option, value) => option.value === value.value}
           error={showOtherSubraceError}
           helperText={showOtherSubraceError ? 'Enter a subrace name when Other is selected.' : undefined}
           disabled={!raceSelection}

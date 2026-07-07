@@ -39,6 +39,11 @@ const CharSheetAutocomplete = <
   helperText,
   label,
   error,
+  autoHighlight = true,
+  autoSelect = true,
+  openOnFocus = true,
+  handleHomeEndKeys = true,
+  sx,
   ...props
 }: CharSheetAutocompleteProps<T, Multiple, DisableClearable, FreeSolo>) => {
   const width = sizeMap[fieldSize];
@@ -47,6 +52,10 @@ const CharSheetAutocomplete = <
     <FormControl sx={{ width }} error={error}>
       <Autocomplete
         {...props}
+        autoHighlight={autoHighlight}
+        autoSelect={autoSelect}
+        openOnFocus={openOnFocus}
+        handleHomeEndKeys={handleHomeEndKeys}
         renderInput={(params) => (
           <TextField
             {...params}
@@ -56,7 +65,7 @@ const CharSheetAutocomplete = <
               '& .MuiOutlinedInput-notchedOutline': {
                 borderColor: '#ccc',
               },
-              '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
+              '& .MuiOutlinedInput-root:not(.Mui-disabled):hover .MuiOutlinedInput-notchedOutline': {
                 borderColor: '#ccc',
               },
               '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
@@ -83,17 +92,26 @@ const CharSheetAutocomplete = <
             }}
           />
         )}
-        sx={{
-          '& .MuiAutocomplete-paper': {
-            color: 'black',
+        sx={[
+          {
+            '& .MuiAutocomplete-paper': {
+              color: 'black',
+            },
+            '& .MuiAutocomplete-option': {
+              fontFamily: '"Quintessential", serif',
+              fontWeight: 400,
+              fontStyle: 'normal',
+              color: 'black',
+            },
+            '& .MuiAutocomplete-option.Mui-focused': {
+              backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            },
+            '& .MuiAutocomplete-option[aria-selected="true"]': {
+              backgroundColor: 'rgba(25, 118, 210, 0.24)',
+            },
           },
-          '& .MuiAutocomplete-option': {
-            fontFamily: '"Quintessential", serif',
-            fontWeight: 400,
-            fontStyle: 'normal',
-            color: 'black',
-          },
-        }}
+          sx,
+        ]}
       />
       {helperText && (
         <FormHelperText

@@ -26,7 +26,7 @@ const Generate = () => {
 
   return (
     <div>
-      <h2>Character Generation</h2>
+      <h1>Character Generation</h1>
       <p>
         Consider creating {race === 'elf' ? 'an' : 'a'} <strong>{race}</strong>{' '}
         <strong>{classType}</strong> using these stats:

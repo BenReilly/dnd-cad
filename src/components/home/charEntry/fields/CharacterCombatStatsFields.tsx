@@ -1,7 +1,9 @@
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import AddIcon from '@mui/icons-material/Add';
-import { HitDie } from '../../../../types/Characters.Types';
+import CharacterAttackFields from './CharacterAttackFields';
+import { AttackFieldErrors } from './CharacterAttackFields';
+import { Attack, HitDie } from '../../../../types/Characters.Types';
 import React from 'react';
 
 interface CharacterCombatStatsFieldsProps {
@@ -20,10 +22,23 @@ interface CharacterCombatStatsFieldsProps {
   addHitDieRow: () => void;
   setHitDieTouched: (index: number) => void;
   hitDieSizes: string[];
+  attacks: Attack[];
+  handleAttackNameChange: (index: number, value: string) => void;
+  handleAttackBonusChange: (index: number, value: number | null) => void;
+  handleAttackTypeChange: (index: number, value: string) => void;
+  handleAttackNormalRangeChange: (index: number, value: string) => void;
+  handleAttackLongRangeChange: (index: number, value: string) => void;
+  handleAttackDamageQtyChange: (index: number, value: number | null) => void;
+  handleAttackDamageSizeChange: (index: number, value: string | null) => void;
+  handleAttackDamageModChange: (index: number, value: number | null) => void;
+  attackFieldErrors: AttackFieldErrors[];
+  attackFormError?: string;
+  attackDamageSizes: string[];
+  addAttackRow: () => void;
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  fieldBlock: { padding: '8px', marginBottom: '5px' },
+  fieldBlock: { padding: '15px', marginBottom: '5px' },
   combatStats: { display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '20px', padding: '8px' },
   addButton: {
     display: 'inline-flex',
@@ -53,6 +68,19 @@ const CharacterCombatStatsFields = ({
   addHitDieRow,
   setHitDieTouched,
   hitDieSizes,
+  attacks,
+  handleAttackNameChange,
+  handleAttackBonusChange,
+  handleAttackTypeChange,
+  handleAttackNormalRangeChange,
+  handleAttackLongRangeChange,
+  handleAttackDamageQtyChange,
+  handleAttackDamageSizeChange,
+  handleAttackDamageModChange,
+  attackFieldErrors,
+  attackFormError,
+  attackDamageSizes,
+  addAttackRow,
 }: CharacterCombatStatsFieldsProps) => {
   // Validation helpers
   const isBlankOrPositiveInt = (val: number | null) => val === null || (Number.isInteger(val) && val > 0);
@@ -73,8 +101,9 @@ const CharacterCombatStatsFields = ({
   });
 
   return (
-    <>
-      <div style={styles.fieldBlock}>
+    <div style={styles.fieldBlock}>
+      <div>
+        <h3>Combat</h3>
         <div className="combatStats" style={styles.combatStats}>
           <CharSheetNumberField
             value={ac}
@@ -175,7 +204,22 @@ const CharacterCombatStatsFields = ({
           <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>{'add another hit die row'}</span>
         </button>
       </div>
-    </>
+      <CharacterAttackFields
+        attacks={attacks}
+        handleAttackNameChange={handleAttackNameChange}
+        handleAttackBonusChange={handleAttackBonusChange}
+        handleAttackTypeChange={handleAttackTypeChange}
+        handleAttackNormalRangeChange={handleAttackNormalRangeChange}
+        handleAttackLongRangeChange={handleAttackLongRangeChange}
+        handleAttackDamageQtyChange={handleAttackDamageQtyChange}
+        handleAttackDamageSizeChange={handleAttackDamageSizeChange}
+        handleAttackDamageModChange={handleAttackDamageModChange}
+        attackFieldErrors={attackFieldErrors}
+        attackFormError={attackFormError}
+        attackDamageSizes={attackDamageSizes}
+        addAttackRow={addAttackRow}
+      />
+    </div>
   );
 };
 

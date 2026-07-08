@@ -1,9 +1,12 @@
-import AddIcon from '@mui/icons-material/Add';
 import React from 'react';
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
 import CharSheetTextField from '../../../library/textField/CharSheetTextField';
 import { Attack } from '../../../../types/Characters.Types';
+import {
+  AddFieldRowButton,
+  characterFieldStyles,
+} from './characterFieldStyles';
 
 export type AttackFieldErrors = {
   name: boolean;
@@ -43,16 +46,6 @@ const styles: { [key: string]: React.CSSProperties } = {
   attackRowSpacer: {
     minHeight: '8px',
   },
-  addButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: 'transparent',
-    border: 'none',
-    padding: 0,
-    cursor: 'pointer',
-    color: '#666',
-  },
 };
 
 const CharacterAttackFields = ({
@@ -83,8 +76,8 @@ const CharacterAttackFields = ({
   };
 
   return (
-    <div style={{ marginTop: '20px', padding: '8px' }}>
-      <label style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 8, display: 'block' }}>Attacks</label>
+    <div style={characterFieldStyles.sectionBlock}>
+      <label style={characterFieldStyles.fieldLabel}>Attacks</label>
       {attacks.map((attack, idx) => {
         const parsedDamage = parseDamage(attack.damage);
         const fieldErrors = attackFieldErrors[idx] ?? {
@@ -179,17 +172,14 @@ const CharacterAttackFields = ({
           </div>
         );
       })}
-      <button
-        type="button"
+      <AddFieldRowButton
+        ariaLabel="Add another attack row"
         onClick={addAttackRow}
-        aria-label="Add another attack row"
-        style={styles.addButton}
       >
-        <AddIcon sx={{ width: 20, height: 20, strokeWidth: 2, color: '#fff' }} />
-        <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>{'add another attack row'}</span>
-      </button>
+        add another attack row
+      </AddFieldRowButton>
       {attackFormError && (
-        <div style={{ color: 'red', marginTop: '8px', fontSize: '0.875rem' }}>{attackFormError}</div>
+        <div style={characterFieldStyles.formError}>{attackFormError}</div>
       )}
     </div>
   );

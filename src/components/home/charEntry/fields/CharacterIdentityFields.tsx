@@ -2,6 +2,7 @@ import { ChangeEvent } from 'react';
 import CharSheetTextField from '../../../library/textField/CharSheetTextField';
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
+import { characterFieldStyles } from './characterFieldStyles';
 
 type Option = { value: string; label: string };
 
@@ -88,7 +89,7 @@ const CharacterIdentityFields = ({
 
   return (
     <>
-      <div style={{ padding: '8px', marginBottom: '5px' }}>
+      <div style={characterFieldStyles.fieldBlock}>
         <CharSheetTextField
           value={name}
           onChange={handleNameChange}
@@ -105,7 +106,7 @@ const CharacterIdentityFields = ({
           helperText={nameError}
         />
       </div>
-      <div style={{ padding: '8px', marginBottom: '5px' }}>
+      <div style={characterFieldStyles.fieldBlock}>
         <CharSheetNumberField
           value={xp}
           onValueChange={(value) => {
@@ -124,7 +125,7 @@ const CharacterIdentityFields = ({
           useGrouping
         />
       </div>
-      <div style={{ padding: '8px', marginBottom: '5px' }}>
+      <div style={characterFieldStyles.fieldBlock}>
         <CharSheetAutocomplete
           value={selectedBackgroundOption}
           inputValue={background}

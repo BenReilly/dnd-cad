@@ -1,9 +1,12 @@
-import { Fragment, useEffect, useState } from 'react';
-import AddIcon from '@mui/icons-material/Add';
+import { CSSProperties, Fragment, useEffect, useState } from 'react';
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharSheetTextField from '../../../library/textField/CharSheetTextField';
 import { ClassDescription, CharClassFormat } from '../../../../types/Characters.Types';
+import {
+  AddFieldRowButton,
+  characterFieldStyles,
+} from './characterFieldStyles';
 
 type Option = { value: string; label: string };
 
@@ -56,22 +59,9 @@ interface CharacterClassFieldsProps {
   formError?: string;
 }
 
-const styles: { [key: string]: React.CSSProperties } = {
-  fieldBlock: { padding: '8px', marginBottom: '5px' },
-  flexColumn: { display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' },
-  flexRow: { display: 'flex', gap: '8px', alignItems: 'flex-start' },
+const styles: { [key: string]: CSSProperties } = {
   classDescription: { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '6px', padding: '8px' },
   classDescriptionFirst: { display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px', padding: '8px' },
-  addButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: 'transparent',
-    border: 'none',
-    padding: 0,
-    cursor: 'pointer',
-    color: '#666',
-  },
 };
 
 const CharacterClassFields = ({
@@ -216,8 +206,8 @@ const CharacterClassFields = ({
               className="classDescription"
               style={index === 0 ? styles.classDescriptionFirst : styles.classDescription}
             >
-              <div style={styles.flexRow}>
-                <div style={styles.flexColumn}>
+              <div style={characterFieldStyles.fieldRow}>
+                <div style={characterFieldStyles.fieldColumn}>
                   <CharSheetAutocomplete
                     value={selectedClassOption}
                     inputValue={classInputValues[index] ?? selectionToInputValue(entry.classSelection)}
@@ -282,7 +272,7 @@ const CharacterClassFields = ({
                     />
                   )}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+                <div style={{ ...characterFieldStyles.fieldColumn, alignItems: 'flex-start', minWidth: undefined }}>
                   <CharSheetNumberField
                     value={entry.level}
                     onValueChange={(value) => handleLevelChange(index, value)}
@@ -293,7 +283,7 @@ const CharacterClassFields = ({
                     max={20}
                   />
                 </div>
-                <div style={styles.flexColumn}>
+                <div style={characterFieldStyles.fieldColumn}>
                   <CharSheetAutocomplete
                     value={selectedSubclassOption}
                     inputValue={subclassInputValues[index] ?? selectionToInputValue(entry.subclass)}
@@ -348,21 +338,18 @@ const CharacterClassFields = ({
               </div>
             </div>
             {index === 0 && formError && (
-              <div style={{ color: 'red', marginTop: '8px', fontSize: '0.875rem' }}>{formError}</div>
+              <div style={characterFieldStyles.formError}>{formError}</div>
             )}
           </Fragment>
         );
       })}
       <div style={{ marginTop: '6px', padding: '8px' }}>
-        <button
-          type="button"
+        <AddFieldRowButton
+          ariaLabel="Add another character class"
           onClick={() => duplicateClassDescription(classDescriptions.length - 1)}
-          aria-label="Add another character class"
-          style={styles.addButton}
         >
-          <AddIcon sx={{ width: 20, height: 20, strokeWidth: 2, color: '#fff' }} />
-          <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>{'add another character class'}</span>
-        </button>
+          add another character class
+        </AddFieldRowButton>
       </div>
     </>
   );

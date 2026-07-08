@@ -1,10 +1,13 @@
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
-import AddIcon from '@mui/icons-material/Add';
 import CharacterAttackFields from './CharacterAttackFields';
 import { AttackFieldErrors } from './CharacterAttackFields';
 import { Attack, HitDie } from '../../../../types/Characters.Types';
 import React from 'react';
+import {
+  AddFieldRowButton,
+  characterFieldStyles,
+} from './characterFieldStyles';
 
 interface CharacterCombatStatsFieldsProps {
   ac: number | null;
@@ -40,16 +43,6 @@ interface CharacterCombatStatsFieldsProps {
 const styles: { [key: string]: React.CSSProperties } = {
   fieldBlock: { padding: '15px', marginBottom: '5px' },
   combatStats: { display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '20px', padding: '8px' },
-  addButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: 'transparent',
-    border: 'none',
-    padding: 0,
-    cursor: 'pointer',
-    color: '#666',
-  },
 };
 
 const CharacterCombatStatsFields = ({
@@ -153,8 +146,8 @@ const CharacterCombatStatsFields = ({
           />
         </div>
       </div>
-      <div style={{ marginTop: '20px', padding: '8px' }}>
-        <label style={{ fontWeight: 600, fontSize: '1rem', marginBottom: 8, display: 'block' }}>Hit Dice</label>
+      <div style={characterFieldStyles.sectionBlock}>
+        <label style={characterFieldStyles.fieldLabel}>Hit Dice</label>
         {hitDice.map((hd, idx) => {
           const touched = hitDiceTouched[idx];
           const isError = touched && hitDiceErrors[idx];
@@ -194,15 +187,12 @@ const CharacterCombatStatsFields = ({
             </div>
           );
         })}
-        <button
-          type="button"
+        <AddFieldRowButton
+          ariaLabel="Add another hit die row"
           onClick={addHitDieRow}
-          aria-label="Add another hit die row"
-          style={styles.addButton}
         >
-          <AddIcon sx={{ width: 20, height: 20, strokeWidth: 2, color: '#fff' }} />
-          <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>{'add another hit die row'}</span>
-        </button>
+          add another hit die row
+        </AddFieldRowButton>
       </div>
       <CharacterAttackFields
         attacks={attacks}

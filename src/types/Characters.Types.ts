@@ -147,8 +147,10 @@ export type Character = {
   hitDice?: HitDie[];
   persona?: Persona;
   attacks?: Attack[];
-  featuresAndTraits?: Feature[];
-  proficienciesAndLanguages?: string[];
+  racialTraits?: Feature[];
+  classFeatures?: Feature[];
+  proficiencies?: string[];
+  languages?: string[];
   equipment?: Equipment;
   description?: Description;
   alliesAndAssociations?: Ally;

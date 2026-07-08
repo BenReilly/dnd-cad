@@ -15,6 +15,7 @@ import {
   getSkillProficientKey,
   groupSkillsByAbility,
 } from './abilitiesTab.utils';
+import { borderlessModifierSx } from './characterFieldStyles';
 
 interface CharacterAbilitiesSectionProps {
   abilities: AbilityValues;
@@ -113,29 +114,6 @@ const disabledModifierSlotProps = {
       textAlign: 'left' as const,
       lineHeight: 1.1,
     },
-  },
-};
-
-const borderlessModifierSx = {
-  width: '72px',
-  '& .MuiOutlinedInput-root': {
-    height: '72px',
-  },
-  '& .MuiOutlinedInput-notchedOutline': {
-    border: 'none',
-  },
-  '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-    border: 'none',
-  },
-  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-    border: 'none',
-  },
-  '& .MuiOutlinedInput-input': {
-    boxSizing: 'border-box',
-    fontSize: '18px',
-    height: '72px',
-    padding: 0,
-    textAlign: 'center',
   },
 };
 

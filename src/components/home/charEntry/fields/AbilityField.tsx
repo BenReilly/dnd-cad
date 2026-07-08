@@ -1,33 +1,7 @@
 import React from 'react';
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
 import { Abilities } from '../../../../types/Characters.Types';
-
-const abilityBoxSx = {
-  width: '72px',
-  '& .MuiOutlinedInput-root': {
-    height: '72px',
-  },
-  '& .MuiOutlinedInput-input': {
-    boxSizing: 'border-box',
-    fontSize: '18px',
-    height: '72px',
-    padding: 0,
-    textAlign: 'center',
-  },
-};
-
-const borderlessModifierSx = {
-  ...abilityBoxSx,
-  '& .MuiOutlinedInput-notchedOutline': {
-    border: 'none',
-  },
-  '& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline': {
-    border: 'none',
-  },
-  '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
-    border: 'none',
-  },
-};
+import { abilityBoxSx, borderlessModifierSx } from './characterFieldStyles';
 
 interface AbilityFieldProps {
   ability: keyof Abilities;

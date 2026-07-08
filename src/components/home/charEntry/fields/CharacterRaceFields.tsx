@@ -1,6 +1,7 @@
 import { ChangeEvent, useState } from 'react';
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharSheetTextField from '../../../library/textField/CharSheetTextField';
+import { characterFieldStyles } from './characterFieldStyles';
 
 type Option = { value: string; label: string };
 
@@ -147,8 +148,8 @@ const CharacterRaceFields = ({
   };
 
   return (
-    <div className="raceDescription" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '20px', padding: '8px' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+    <div className="raceDescription" style={{ ...characterFieldStyles.fieldRow, ...characterFieldStyles.sectionBlock }}>
+      <div style={characterFieldStyles.fieldColumn}>
         <CharSheetAutocomplete
           value={findMatchingOption(raceSelection, raceOptionsWithOther) ?? null}
           inputValue={raceInputValue}
@@ -215,7 +216,7 @@ const CharacterRaceFields = ({
           />
         )}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+      <div style={characterFieldStyles.fieldColumn}>
         <CharSheetAutocomplete
           value={findMatchingOption(subraceSelection, subraceOptionsWithOther) ?? null}
           inputValue={subraceInputValue}

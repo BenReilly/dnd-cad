@@ -35,6 +35,7 @@ const CharactersProvider = ({ children }: PropsWithChildren) => {
       });
       setCharactersSummary(characterSummaries);
       setCharacters(fetchedCharacters);
+      // console.log('Fetched characters:', fetchedCharacters);
     };
     fetchCharacters();
   }, []);

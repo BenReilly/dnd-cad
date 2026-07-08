@@ -243,7 +243,13 @@ describe('firebase utility functions', () => {
         })),
       });
       const result = await getCharacters();
-      expect(result).toEqual(mockedCharacterSummaries);
+      expect(result).toEqual(
+        mockedCharacterSummaries.map((character) => ({
+          ...character,
+          user_doc: '',
+          abilities: undefined,
+        })),
+      );
     });
   });
 
@@ -256,7 +262,13 @@ describe('firebase utility functions', () => {
       });
 
       const result = await getCharacterDetail('77zg0SMUQcgD1AggYI1V');
-      expect(result).toEqual(mockedCharacterData);
+      const { userDoc, ...mockedCharacter } = mockedCharacterData;
+
+      expect(result).toEqual({
+        ...mockedCharacter,
+        charId: '77zg0SMUQcgD1AggYI1V',
+        user_doc: userDoc,
+      });
     });
   });
 });

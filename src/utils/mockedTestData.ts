@@ -154,11 +154,13 @@ export const mockedCharacterData = {
     'simple weapons',
   ],
   subrace: null,
-  featuresAndTraits: [
-    "Darkvision 60'",
-    'Relentless Endurance (drop to 1 instead of 0 hp if not killed)',
-    'Savage Attacks (1 extra damage die on critical hit)',
-    'Otherworldly Patron: Demogorgon',
+  racialTraits: [
+    { name: "Darkvision 60'" },
+    { name: 'Relentless Endurance (drop to 1 instead of 0 hp if not killed)' },
+    { name: 'Savage Attacks (1 extra damage die on critical hit)' },
+  ],
+  classFeatures: [
+    { name: 'Otherworldly Patron: Demogorgon' },
   ],
   initiative: null,
   ac: 11,

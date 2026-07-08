@@ -4,6 +4,7 @@ import CharacterIdentityFields from './fields/CharacterIdentityFields';
 import CharacterRaceFields from './fields/CharacterRaceFields';
 import CharacterClassFields from './fields/CharacterClassFields';
 import CharacterCombatStatsFields from './fields/CharacterCombatStatsFields';
+import CharacterTraitFields from './fields/CharacterTraitsFields';
 import { AttackFieldErrors } from './fields/CharacterAttackFields';
 import CharacterAbilitiesSection, {
   CharacterAbilitiesSectionHandle,
@@ -98,6 +99,10 @@ const CharEntry = () => {
   });
   const [attacks, setAttacks] = useState<Attack[]>([emptyAttack()]);
   const [attackFieldErrors, setAttackFieldErrors] = useState<AttackFieldErrors[]>([emptyAttackFieldErrors()]);
+  // const [racialTraits, setRacialTraits] = useState<Feature[]>([]);
+  // const [classFeatures, setClassFeatures] = useState<Feature[]>([]);
+  const [proficiencies, setProficiencies] = useState<string[]>([]);
+  const [languages, setLanguages] = useState<string[]>([]);
   // Hit Dice handlers
   const handleHitDieQtyChange = (index: number, value: number | null) => {
     setHitDice((prev) => prev.map((hd, i) => i === index ? { ...hd, qty: value ?? 0 } : hd));
@@ -538,6 +543,10 @@ const CharEntry = () => {
     setAttackFieldErrors(attacks.map(() => emptyAttackFieldErrors()));
     setAttackFormError('');
     if (attackRowsWithInput.length > 0) character.attacks = attackRowsWithInput;
+    // if (racialTraits.length > 0) character.racialTraits = racialTraits;
+    // if (classFeatures.length > 0) character.classFeatures = classFeatures;
+    if (proficiencies.length > 0) character.proficiencies = proficiencies;
+    if (languages.length > 0) character.languages = languages;
     if (background && background.trim()) character.background = background.trim();
     if (typeof xp === 'number') character.xp = xp;
     if (typeof ac === 'number') character.ac = ac;
@@ -562,7 +571,7 @@ const CharEntry = () => {
       expertise: skillStates[skill.key]?.expertise ?? false,
     }));
 
-    console.log(character);
+    // console.log(character);
   };
 
   return (
@@ -696,6 +705,21 @@ const CharEntry = () => {
                   attackFormError={attackFormError}
                   attackDamageSizes={attackDamageSizes}
                   addAttackRow={addAttackRow}
+                />
+              ),
+            },
+            {
+              label: 'Traits',
+              content: (
+                // racialTraits={racialTraits}
+                // setRacialTraits={setRacialTraits}
+                // classFeatures={classFeatures}
+                // setClassFeatures={setClassFeatures}
+                <CharacterTraitFields
+                  proficiencies={proficiencies}
+                  setProficiencies={setProficiencies}
+                  languages={languages}
+                  setLanguages={setLanguages}
                 />
               ),
             },

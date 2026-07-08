@@ -5,6 +5,7 @@ import './index.css';
 import UserProvider from './contexts/user.context.tsx';
 import { RaceClassProvider } from './contexts/racesAndClasses.context.tsx';
 import CharactersProvider from './contexts/characters.context.tsx';
+import { CharacterOptionsProvider } from './contexts/characterOptions.context.tsx';
 
 import { routeTree } from './routeTree.gen.ts';
 
@@ -21,7 +22,9 @@ createRoot(document.getElementById('root')!).render(
     <UserProvider>
       <RaceClassProvider>
         <CharactersProvider>
-          <RouterProvider router={router} />
+          <CharacterOptionsProvider>
+            <RouterProvider router={router} />
+          </CharacterOptionsProvider>
         </CharactersProvider>
       </RaceClassProvider>
     </UserProvider>

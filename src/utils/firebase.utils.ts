@@ -22,9 +22,46 @@ import {
   Timestamp,
   where,
 } from 'firebase/firestore';
-import { Character, CharClassFormat, Race } from '../types/Characters.Types';
+import {
+  Background,
+  Character,
+  CharClassFormat,
+  Race,
+  Skill,
+} from '../types/Characters.Types';
 import { UserData } from '../types/User.Types';
 import firebaseConfig from './firebase.config';
+
+type CharacterDocument = Partial<Character> & {
+  abilities: Character['abilities'];
+  userDoc?: string;
+  charClass?: Character['class'];
+};
+
+type SkillDocument = Partial<Skill> & Pick<Skill, 'ability'>;
+
+const normalizeCharacterDocument = (
+  characterDocument: CharacterDocument,
+  charId: string,
+): Character => {
+  const { charClass, userDoc, ...rest } = characterDocument;
+
+  return {
+    charId,
+    ...rest,
+    user_doc: rest.user_doc ?? userDoc ?? '',
+    class: rest.class ?? charClass ?? [],
+    abilities: rest.abilities,
+  } as Character;
+};
+
+const normalizeSkillDocument = (skillDocument: SkillDocument): Skill => {
+  const { ability, ...rest } = skillDocument;
+  return {
+    ...rest,
+    ability,
+  } as Skill;
+};
 
 // Initialize Firebase
 initializeApp(firebaseConfig);
@@ -120,18 +157,54 @@ export const getClasses = async (): Promise<CharClassFormat[]> => {
   return classes;
 };
 
+export const getBackgrounds = async (): Promise<Background[]> => {
+  const collectionRef = collection(
+    db,
+    'backgrounds',
+  ) as CollectionReference<Background>;
+  const querySnapshot = await getDocs(collectionRef);
+  const backgrounds: Background[] = querySnapshot.docs.map((docSnapshot) =>
+    docSnapshot.data(),
+  );
+  return backgrounds;
+};
+
+export const getSkills = async (): Promise<Skill[]> => {
+  const collectionRef = collection(db, 'skills');
+  const querySnapshot = await getDocs(collectionRef);
+  const skills: Skill[] = querySnapshot.docs.map((docSnapshot) =>
+    normalizeSkillDocument(docSnapshot.data() as SkillDocument),
+  );
+  return skills;
+};
+
+export const addBackground = async (
+  background: Background,
+): Promise<DocumentReference<Background> | null> => {
+  try {
+    const backgroundsCollection = collection(
+      db,
+      'backgrounds',
+    ) as CollectionReference<Background>;
+    const backgroundDocRef = doc(
+      backgroundsCollection,
+    ) as DocumentReference<Background>;
+    await setDoc(backgroundDocRef, background);
+    return backgroundDocRef;
+  } catch (err) {
+    console.error('Error adding background document:', err);
+    return null;
+  }
+};
+
 export const getCharacters = async (): Promise<Character[]> => {
   const collectionRef = collection(db, 'characters');
   // tech debt: update to use actual user ID
   const q = query(collectionRef, where('userDoc', '==', 'eje'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map((docSnapshot) => {
-    const character = docSnapshot.data();
-    return {
-      charId: docSnapshot.id,
-      class: character.charClass,
-      ...character,
-    };
+    const character = docSnapshot.data() as CharacterDocument;
+    return normalizeCharacterDocument(character, docSnapshot.id);
   }) as Character[];
 };
 
@@ -140,10 +213,10 @@ export const getCharacterDetail = async (
 ): Promise<Character> => {
   const docRef = doc(db, 'characters', characterId);
   const docSnapshot = await getDoc(docRef);
-  return {
-    charId: docSnapshot.id,
-    ...docSnapshot.data(),
-  } as Character;
+  return normalizeCharacterDocument(
+    docSnapshot.data() as CharacterDocument,
+    docSnapshot.id,
+  );
 };
 
 export const onAuthStateChangedListener = (callback: NextOrObserver<User>) =>

@@ -5,6 +5,7 @@ import {
   generateStatSet,
   randomArrayElement,
 } from '../utils/generatestats.utils.js';
+import CharEntry from '../components/home/charEntry/charEntry.component';
 
 const Generate = () => {
   const { Races, Classes } = useContext(RaceClassContext);
@@ -25,7 +26,7 @@ const Generate = () => {
 
   return (
     <div>
-      <h2>Character Generation</h2>
+      <h1>Character Generation</h1>
       <p>
         Consider creating {race === 'elf' ? 'an' : 'a'} <strong>{race}</strong>{' '}
         <strong>{classType}</strong> using these stats:
@@ -37,6 +38,7 @@ const Generate = () => {
           </span>
         ))}
       </p>
+      <CharEntry />
     </div>
   );
 };

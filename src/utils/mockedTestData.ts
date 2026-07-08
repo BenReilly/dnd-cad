@@ -36,6 +36,17 @@ export const mockedClassData = [
   },
 ];
 
+export const mockedBackgroundData = [
+  {
+    bg_name: 'Acolyte',
+    description: 'Raised in a temple, you have a deep commitment to your faith.',
+  },
+  {
+    bg_name: 'Criminal',
+    description: 'You have a history of breaking the law and working from the shadows.',
+  },
+];
+
 export const mockedCharacterSummaries = [
   {
     charId: 'adsfasdf',
@@ -131,7 +142,7 @@ export const mockedCharacterData = {
     insight: true,
     history: false,
     arcana: true,
-    slightOfHand: false,
+    sleightOfHand: false,
     perception: false,
     nature: true,
     acrobatics: false,
@@ -143,11 +154,13 @@ export const mockedCharacterData = {
     'simple weapons',
   ],
   subrace: null,
-  featuresAndTraits: [
-    "Darkvision 60'",
-    'Relentless Endurance (drop to 1 instead of 0 hp if not killed)',
-    'Savage Attacks (1 extra damage die on critical hit)',
-    'Otherworldly Patron: Demogorgon',
+  racialTraits: [
+    { name: "Darkvision 60'" },
+    { name: 'Relentless Endurance (drop to 1 instead of 0 hp if not killed)' },
+    { name: 'Savage Attacks (1 extra damage die on critical hit)' },
+  ],
+  classFeatures: [
+    { name: 'Otherworldly Patron: Demogorgon' },
   ],
   initiative: null,
   ac: 11,
@@ -286,7 +299,7 @@ export const mockedCharacterData = {
   ],
   race: 'Half-Orc',
   background: 'Acolyte',
-  attributes: {
+  abilities: {
     str: 12,
     dex: 12,
     int: 10,

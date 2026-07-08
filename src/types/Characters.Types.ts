@@ -19,14 +19,14 @@ export type Ally = {
 
 export type Attack = {
   name: string;
-  attackBonus: number;
+  attackBonus: number | null;
   damage: string;
-  normalRange: number | null;
-  longRange: number | null;
+  normalRange?: number | null;
+  longRange?: number | null;
   type: string;
 };
 
-export type Attributes = {
+export type Abilities = {
   str: number;
   dex: number;
   con: number;
@@ -38,6 +38,18 @@ export type Attributes = {
 export type CharClass = {
   name: string;
   level?: number;
+};
+
+export type ClassDescription = {
+  classSelection: string;
+  otherClassText: string;
+  level: number | null;
+  subclass: string;
+  subclassOther: string;
+  touched: boolean;
+  otherTouched: boolean;
+  subclassTouched: boolean;
+  otherSubclassTouched: boolean;
 };
 
 export type CharClassFormat = {
@@ -90,6 +102,11 @@ export type Race = {
   subraces?: string[];
 };
 
+export type Background = {
+  bg_name: string;
+  description?: string;
+};
+
 export type SavingThrows = {
   str: boolean;
   dex: boolean;
@@ -99,26 +116,14 @@ export type SavingThrows = {
   cha: boolean;
 };
 
-export type Skills = {
-  acrobatics: boolean | 'double';
-  animalHandling: boolean | 'double';
-  arcana: boolean | 'double';
-  athletics: boolean | 'double';
-  deception: boolean | 'double';
-  history: boolean | 'double';
-  insight: boolean | 'double';
-  intimidation: boolean | 'double';
-  investigation: boolean | 'double';
-  medicine: boolean | 'double';
-  nature: boolean | 'double';
-  perception: boolean | 'double';
-  performance: boolean | 'double';
-  persuasion: boolean | 'double';
-  religion: boolean | 'double';
-  slightOfHand: boolean | 'double';
-  stealth: boolean | 'double';
-  survival: boolean | 'double';
-};
+export type Skill = {
+  key: string;
+  display: string;
+  expertise?: boolean;
+  proficient?: boolean;
+  ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
+}
+
 
 export type Character = {
   charId: string;
@@ -131,10 +136,10 @@ export type Character = {
   subrace?: string;
   alignment?: Alignment;
   xp?: number;
-  attributes?: Attributes;
+  abilities?: Abilities;
   inspiration?: number;
   savingThrows?: SavingThrows;
-  skills?: Skills;
+  skills?: Skill[];
   ac?: number;
   initiative?: number;
   speed?: number;
@@ -142,13 +147,15 @@ export type Character = {
   hitDice?: HitDie[];
   persona?: Persona;
   attacks?: Attack[];
-  featuresAndTraits?: Feature[];
-  proficienciesAndLanguages?: string[];
+  racialTraits?: Feature[];
+  classFeatures?: Feature[];
+  proficiencies?: string[];
+  languages?: string[];
   equipment?: Equipment;
   description?: Description;
   alliesAndAssociations?: Ally;
-  additionalFeatures: [string];
-  treasure?: [string];
+  additionalFeatures?: string[];
+  treasure?: string[];
   spells?: SpellSheet;
 };
 
@@ -167,6 +174,14 @@ export type CharacterContextType = {
   CurrentCharacter?: Character;
   Characters: Character[];
   CharacterSummaries: CharacterSummary[];
+};
+
+export type BackgroundContextType = {
+  Backgrounds: Background[];
+};
+
+export type SkillsContextType = {
+  Skills: Skill[];
 };
 
 export type RaceAndClassContextType = {

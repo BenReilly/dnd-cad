@@ -11,7 +11,19 @@ import CharacterAbilitiesSection, {
 } from './fields/CharacterAbilitiesSection';
 import CharSheetVerticalTabs from '../../library/tabs/CharSheetVerticalTabs';
 
-import { ClassDescription, RaceAndClassContextType, BackgroundContextType, Race, CharClassFormat, HitDie, Character, Abilities, Skill, SkillsContextType, Attack } from '../../../types/Characters.Types';
+import {
+  Abilities,
+  Attack,
+  BackgroundContextType,
+  Character,
+  CharClassFormat,
+  ClassDescription,
+  HitDie,
+  Race,
+  RaceAndClassContextType,
+  Skill,
+  SkillsContextType,
+} from '../../../types/Characters.Types';
 import { RaceClassContext } from '../../../contexts/racesAndClasses.context';
 import { BackgroundsContext, SkillsContext } from '../../../contexts/characterOptions.context.tsx';
 

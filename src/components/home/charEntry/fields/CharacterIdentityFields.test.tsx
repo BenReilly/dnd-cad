@@ -5,15 +5,12 @@ import { describe, it, expect, vi } from 'vitest';
 describe('CharacterIdentityFields', () => {
   const defaultProps: CharacterIdentityFieldsProps = {
     name: '',
-    setName: () => {},
+    background: '',
+    updateCharacter: () => {},
     nameTouched: false,
     setNameTouched: () => {},
     nameError: '',
     setNameError: () => {},
-    xp: null,
-    setXp: () => {},
-    background: '',
-    setBackground: () => {},
     backgroundOptions: [
       { value: 'Acolyte', label: 'Acolyte' },
       { value: 'Charlatan', label: 'Charlatan' },
@@ -43,12 +40,12 @@ describe('CharacterIdentityFields', () => {
     expect(setNameError).toHaveBeenCalledWith('Name is required.');
   });
 
-  it('calls setBackground when background changes', () => {
-    const setBackground = vi.fn();
+  it('calls updateCharacter when background changes', () => {
+    const updateCharacter = vi.fn();
     render(
       <CharacterIdentityFields
         {...defaultProps}
-        setBackground={setBackground}
+        updateCharacter={updateCharacter}
       />
     );
     const backgroundField = screen.getByLabelText('Background');
@@ -58,24 +55,24 @@ describe('CharacterIdentityFields', () => {
   });
 
   it('stores total xp as a number while displaying commas', () => {
-    const setXp = vi.fn();
+    const updateCharacter = vi.fn();
     const { rerender } = render(
       <CharacterIdentityFields
         {...defaultProps}
-        setXp={setXp}
+        updateCharacter={updateCharacter}
       />
     );
 
     const xpField = screen.getByLabelText('Total XP');
     fireEvent.change(xpField, { target: { value: '1,000,000' } });
 
-    expect(setXp).toHaveBeenCalledWith(1000000);
+    expect(updateCharacter).toHaveBeenCalledWith({ xp: 1000000 });
 
     rerender(
       <CharacterIdentityFields
         {...defaultProps}
         xp={1000000}
-        setXp={setXp}
+        updateCharacter={updateCharacter}
       />
     );
 
@@ -83,11 +80,11 @@ describe('CharacterIdentityFields', () => {
   });
 
   it('caps total xp at the JavaScript safe integer limit', () => {
-    const setXp = vi.fn();
+    const updateCharacter = vi.fn();
     render(
       <CharacterIdentityFields
         {...defaultProps}
-        setXp={setXp}
+        updateCharacter={updateCharacter}
       />
     );
 
@@ -95,6 +92,6 @@ describe('CharacterIdentityFields', () => {
       target: { value: '9,007,199,254,740,993' },
     });
 
-    expect(setXp).toHaveBeenCalledWith(Number.MAX_SAFE_INTEGER);
+    expect(updateCharacter).toHaveBeenCalledWith({ xp: Number.MAX_SAFE_INTEGER });
   });
 });

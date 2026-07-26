@@ -10,10 +10,7 @@ describe('CharacterCombatStatsFields', () => {
   const baseAttacks: Attack[] = [{ name: '', attackBonus: null, damage: '', normalRange: null, longRange: null, type: '' }];
   const baseAttackFieldErrors = [{ name: false, attackBonus: false, damage: false, type: false }];
   const baseTouched = [false];
-  const setAc = vi.fn();
-  const setInitiative = vi.fn();
-  const setSpeed = vi.fn();
-  const setInspiration = vi.fn();
+  const updateCharacter = vi.fn();
   const handleHitDieQtyChange = vi.fn();
   const handleHitDieDieChange = vi.fn();
   const addHitDieRow = vi.fn();
@@ -28,25 +25,29 @@ describe('CharacterCombatStatsFields', () => {
   const handleAttackDamageModChange = vi.fn();
   const addAttackRow = vi.fn();
 
-  it('renders AC, INIT, Speed, Inspiration fields', () => {
+  const renderCombatFields = (overrides: {
+    ac?: number;
+    initiative?: number;
+    speed?: number;
+    inspiration?: number;
+    hitDice?: HitDie[];
+    attacks?: Attack[];
+  } = {}) =>
     render(
       <CharacterCombatStatsFields
-        ac={10}
-        setAc={setAc}
-        initiative={2}
-        setInitiative={setInitiative}
-        speed={30}
-        setSpeed={setSpeed}
-        inspiration={1}
-        setInspiration={setInspiration}
-        hitDice={baseHitDice}
+        ac={overrides.ac}
+        initiative={overrides.initiative}
+        speed={overrides.speed}
+        inspiration={overrides.inspiration}
+        hitDice={overrides.hitDice ?? baseHitDice}
+        attacks={overrides.attacks ?? baseAttacks}
+        updateCharacter={updateCharacter}
         hitDiceTouched={baseTouched}
         handleHitDieQtyChange={handleHitDieQtyChange}
         handleHitDieDieChange={handleHitDieDieChange}
         addHitDieRow={addHitDieRow}
         setHitDieTouched={setHitDieTouched}
         hitDieSizes={hitDieSizes}
-        attacks={baseAttacks}
         handleAttackNameChange={handleAttackNameChange}
         handleAttackBonusChange={handleAttackBonusChange}
         handleAttackTypeChange={handleAttackTypeChange}
@@ -58,8 +59,11 @@ describe('CharacterCombatStatsFields', () => {
         attackFieldErrors={baseAttackFieldErrors}
         attackDamageSizes={attackDamageSizes}
         addAttackRow={addAttackRow}
-      />
+      />,
     );
+
+  it('renders AC, INIT, Speed, Inspiration fields', () => {
+    renderCombatFields({ ac: 10, initiative: 2, speed: 30, inspiration: 1 });
     expect(screen.getByLabelText(/^AC$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/INIT/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Speed/i)).toBeInTheDocument();
@@ -67,110 +71,20 @@ describe('CharacterCombatStatsFields', () => {
   });
 
   it('renders hit dice fields and add button', () => {
-    render(
-      <CharacterCombatStatsFields
-        ac={null}
-        setAc={setAc}
-        initiative={null}
-        setInitiative={setInitiative}
-        speed={null}
-        setSpeed={setSpeed}
-        inspiration={null}
-        setInspiration={setInspiration}
-        hitDice={baseHitDice}
-        hitDiceTouched={baseTouched}
-        handleHitDieQtyChange={handleHitDieQtyChange}
-        handleHitDieDieChange={handleHitDieDieChange}
-        addHitDieRow={addHitDieRow}
-        setHitDieTouched={setHitDieTouched}
-        hitDieSizes={hitDieSizes}
-        attacks={baseAttacks}
-        handleAttackNameChange={handleAttackNameChange}
-        handleAttackBonusChange={handleAttackBonusChange}
-        handleAttackTypeChange={handleAttackTypeChange}
-        handleAttackNormalRangeChange={handleAttackNormalRangeChange}
-        handleAttackLongRangeChange={handleAttackLongRangeChange}
-        handleAttackDamageQtyChange={handleAttackDamageQtyChange}
-        handleAttackDamageSizeChange={handleAttackDamageSizeChange}
-        handleAttackDamageModChange={handleAttackDamageModChange}
-        attackFieldErrors={baseAttackFieldErrors}
-        attackDamageSizes={attackDamageSizes}
-        addAttackRow={addAttackRow}
-      />
-    );
+    renderCombatFields();
     expect(screen.getAllByLabelText(/qty/i).length).toBeGreaterThan(0);
     expect(screen.getAllByLabelText(/size/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /add another hit die row/i })).toBeInTheDocument();
   });
 
   it('calls addHitDieRow when add button is clicked', () => {
-    render(
-      <CharacterCombatStatsFields
-        ac={null}
-        setAc={setAc}
-        initiative={null}
-        setInitiative={setInitiative}
-        speed={null}
-        setSpeed={setSpeed}
-        inspiration={null}
-        setInspiration={setInspiration}
-        hitDice={baseHitDice}
-        hitDiceTouched={baseTouched}
-        handleHitDieQtyChange={handleHitDieQtyChange}
-        handleHitDieDieChange={handleHitDieDieChange}
-        addHitDieRow={addHitDieRow}
-        setHitDieTouched={setHitDieTouched}
-        hitDieSizes={hitDieSizes}
-        attacks={baseAttacks}
-        handleAttackNameChange={handleAttackNameChange}
-        handleAttackBonusChange={handleAttackBonusChange}
-        handleAttackTypeChange={handleAttackTypeChange}
-        handleAttackNormalRangeChange={handleAttackNormalRangeChange}
-        handleAttackLongRangeChange={handleAttackLongRangeChange}
-        handleAttackDamageQtyChange={handleAttackDamageQtyChange}
-        handleAttackDamageSizeChange={handleAttackDamageSizeChange}
-        handleAttackDamageModChange={handleAttackDamageModChange}
-        attackFieldErrors={baseAttackFieldErrors}
-        attackDamageSizes={attackDamageSizes}
-        addAttackRow={addAttackRow}
-      />
-    );
+    renderCombatFields();
     fireEvent.click(screen.getByRole('button', { name: /add another hit die row/i }));
     expect(addHitDieRow).toHaveBeenCalled();
   });
 
   it('renders attack name field and calls addAttackRow when clicked', () => {
-    render(
-      <CharacterCombatStatsFields
-        ac={null}
-        setAc={setAc}
-        initiative={null}
-        setInitiative={setInitiative}
-        speed={null}
-        setSpeed={setSpeed}
-        inspiration={null}
-        setInspiration={setInspiration}
-        hitDice={baseHitDice}
-        hitDiceTouched={baseTouched}
-        handleHitDieQtyChange={handleHitDieQtyChange}
-        handleHitDieDieChange={handleHitDieDieChange}
-        addHitDieRow={addHitDieRow}
-        setHitDieTouched={setHitDieTouched}
-        hitDieSizes={hitDieSizes}
-        attacks={baseAttacks}
-        handleAttackNameChange={handleAttackNameChange}
-        handleAttackBonusChange={handleAttackBonusChange}
-        handleAttackTypeChange={handleAttackTypeChange}
-        handleAttackNormalRangeChange={handleAttackNormalRangeChange}
-        handleAttackLongRangeChange={handleAttackLongRangeChange}
-        handleAttackDamageQtyChange={handleAttackDamageQtyChange}
-        handleAttackDamageSizeChange={handleAttackDamageSizeChange}
-        handleAttackDamageModChange={handleAttackDamageModChange}
-        attackFieldErrors={baseAttackFieldErrors}
-        attackDamageSizes={attackDamageSizes}
-        addAttackRow={addAttackRow}
-      />
-    );
+    renderCombatFields();
 
     expect(screen.getByLabelText(/Attack Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/Atk Mod/i)).toBeInTheDocument();

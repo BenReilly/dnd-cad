@@ -38,6 +38,7 @@ describe('CharEntry', () => {
   it('renders optional combat stat number fields', () => {
     vi.spyOn(console, 'log').mockImplementation(() => null);
     renderCharEntry();
+    fireEvent.click(screen.getByRole('tab', { name: 'Combat' }));
 
     expect(screen.getByLabelText('AC')).toBeInTheDocument();
     expect(screen.getByLabelText('INIT')).toBeInTheDocument();

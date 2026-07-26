@@ -1,29 +1,19 @@
 // import { Feature } from '../../../../types/Characters.Types';
 import CharSheetListField from '../../../library/listField/CharSheetListField';
 import { characterFieldStyles } from './characterFieldStyles';
+import { CharacterEntryState } from '../charEntry.state';
 
 export interface CharacterTraitFieldsProps {
-  // racialTraits: Feature[];
-  // setRacialTraits: (traits: Feature[]) => void;
-  // classFeatures: Feature[];
-  // setClassFeatures: (features: Feature[]) => void;
   proficiencies: string[];
-  setProficiencies: (proficiencies: string[]) => void;
   languages: string[];
-  setLanguages: (languages: string[]) => void;
+  updateCharacter: (patch: Partial<CharacterEntryState>) => void;
 }
 
 const CharacterTraitFields = ({
-  // racialTraits,
-  // setRacialTraits,
-  // classFeatures,
-  // setClassFeatures,
   proficiencies,
-  setProficiencies,
   languages,
-  setLanguages,
+  updateCharacter,
 }: CharacterTraitFieldsProps) => {
-
   // const handleRacialTraitsChange = (newTraits: string[]) => {
   //   setRacialTraits(newTraits.map((name) => ({ name })));
   // };
@@ -54,8 +44,8 @@ const CharacterTraitFields = ({
       </div> */}
       <div style={characterFieldStyles.fieldBlock}>
         <CharSheetListField
-          defaultItems={proficiencies}
-          onItemsChange={setProficiencies}
+          items={proficiencies}
+          onItemsChange={(items) => updateCharacter({ proficiencies: items })}
           label="Proficiencies"
           helperText="Type items separated by commas, or press Enter/Add."
           fieldSize="large"
@@ -63,8 +53,8 @@ const CharacterTraitFields = ({
       </div>
       <div style={characterFieldStyles.fieldBlock}>
         <CharSheetListField
-          defaultItems={languages}
-          onItemsChange={setLanguages}
+          items={languages}
+          onItemsChange={(items) => updateCharacter({ languages: items })}
           label="Languages"
           helperText="Type items separated by commas, or press Enter/Add."
           fieldSize="large"

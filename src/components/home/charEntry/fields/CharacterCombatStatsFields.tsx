@@ -2,6 +2,7 @@ import CharSheetNumberField from '../../../library/numberField/CharSheetNumberFi
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharacterAttackFields from './CharacterAttackFields';
 import { AttackFieldErrors } from './CharacterAttackFields';
+import { CharacterEntryState } from '../charEntry.state';
 import { Attack, HitDie } from '../../../../types/Characters.Types';
 import React from 'react';
 import {
@@ -10,22 +11,19 @@ import {
 } from './characterFieldStyles';
 
 interface CharacterCombatStatsFieldsProps {
-  ac: number | null;
-  setAc: (val: number | null) => void;
-  initiative: number | null;
-  setInitiative: (val: number | null) => void;
-  speed: number | null;
-  setSpeed: (val: number | null) => void;
-  inspiration: number | null;
-  setInspiration: (val: number | null) => void;
+  ac?: number;
+  initiative?: number;
+  speed?: number;
+  inspiration?: number;
   hitDice: HitDie[];
+  attacks: Attack[];
+  updateCharacter: (patch: Partial<CharacterEntryState>) => void;
   hitDiceTouched: boolean[];
   handleHitDieQtyChange: (index: number, value: number | null) => void;
   handleHitDieDieChange: (index: number, value: string | null) => void;
   addHitDieRow: () => void;
   setHitDieTouched: (index: number) => void;
   hitDieSizes: string[];
-  attacks: Attack[];
   handleAttackNameChange: (index: number, value: string) => void;
   handleAttackBonusChange: (index: number, value: number | null) => void;
   handleAttackTypeChange: (index: number, value: string) => void;
@@ -47,21 +45,18 @@ const styles: { [key: string]: React.CSSProperties } = {
 
 const CharacterCombatStatsFields = ({
   ac,
-  setAc,
   initiative,
-  setInitiative,
   speed,
-  setSpeed,
   inspiration,
-  setInspiration,
   hitDice,
+  attacks,
+  updateCharacter,
   hitDiceTouched,
   handleHitDieQtyChange,
   handleHitDieDieChange,
   addHitDieRow,
   setHitDieTouched,
   hitDieSizes,
-  attacks,
   handleAttackNameChange,
   handleAttackBonusChange,
   handleAttackTypeChange,
@@ -76,9 +71,9 @@ const CharacterCombatStatsFields = ({
   addAttackRow,
 }: CharacterCombatStatsFieldsProps) => {
   // Validation helpers
-  const isBlankOrPositiveInt = (val: number | null) => val === null || (Number.isInteger(val) && val > 0);
-  const isBlankOrZeroOrPositiveInt = (val: number | null) => val === null || val === 0 || (Number.isInteger(val) && val > 0);
-  const isBlankOrZeroOrInt = (val: number | null) => val === null || val === 0 || Number.isInteger(val);
+  const isBlankOrPositiveInt = (val: number | undefined) => val === undefined || (Number.isInteger(val) && val > 0);
+  const isBlankOrZeroOrPositiveInt = (val: number | undefined) => val === undefined || val === 0 || (Number.isInteger(val) && val > 0);
+  const isBlankOrZeroOrInt = (val: number | undefined) => val === undefined || val === 0 || Number.isInteger(val);
 
   // Hit Dice: both blank, or qty positive int (not negative/zero) and size in allowed
   const validHitDieSize = (sz: number | null | undefined) => sz !== null && sz !== undefined && hitDieSizes.includes(String(sz));
@@ -99,50 +94,50 @@ const CharacterCombatStatsFields = ({
         <h3>Combat</h3>
         <div className="combatStats" style={styles.combatStats}>
           <CharSheetNumberField
-            value={ac}
-            onValueChange={(val) => setAc(val === null || val === undefined ? null : Math.max(0, Math.floor(val)))}
+            value={ac ?? null}
+            onValueChange={(val) => updateCharacter({ ac: val === null || val === undefined ? undefined : Math.max(0, Math.floor(val)) })}
             label="AC"
             variant="outlined"
             fieldSize="tiny"
-            error={ac !== null && !isBlankOrPositiveInt(ac)}
-            helperText={ac !== null && !isBlankOrPositiveInt(ac) ? 'Must be blank or positive integer' : undefined}
+            error={ac !== undefined && !isBlankOrPositiveInt(ac)}
+            helperText={ac !== undefined && !isBlankOrPositiveInt(ac) ? 'Must be blank or positive integer' : undefined}
           />
           <CharSheetNumberField
-            value={initiative}
-            onValueChange={setInitiative}
+            value={initiative ?? null}
+            onValueChange={(val) => updateCharacter({ initiative: val ?? undefined })}
             label="INIT"
             variant="outlined"
             fieldSize="tiny"
             showPositiveSign
-            error={initiative !== null && !isBlankOrZeroOrInt(initiative)}
-            helperText={initiative !== null && !isBlankOrZeroOrInt(initiative) ? 'Must be blank, 0, or integer' : undefined}
+            error={initiative !== undefined && !isBlankOrZeroOrInt(initiative)}
+            helperText={initiative !== undefined && !isBlankOrZeroOrInt(initiative) ? 'Must be blank, 0, or integer' : undefined}
           />
           <CharSheetNumberField
-            value={speed}
+            value={speed ?? null}
             onValueChange={(val) => {
               if (val === null || val === undefined) {
-                setSpeed(null);
+                updateCharacter({ speed: undefined });
               } else {
                 // Round to nearest multiple of 5, minimum 0
                 const rounded = Math.max(0, Math.round(val / 5) * 5);
-                setSpeed(rounded);
+                updateCharacter({ speed: rounded });
               }
             }}
             label="Speed"
             variant="outlined"
             fieldSize="tiny"
             step={5}
-            error={speed !== null && (speed <= 0 || speed % 5 !== 0)}
-            helperText={speed !== null && (speed <= 0 || speed % 5 !== 0) ? 'Must be blank or a positive multiple of 5' : undefined}
+            error={speed !== undefined && (speed <= 0 || speed % 5 !== 0)}
+            helperText={speed !== undefined && (speed <= 0 || speed % 5 !== 0) ? 'Must be blank or a positive multiple of 5' : undefined}
           />
           <CharSheetNumberField
-            value={inspiration}
-            onValueChange={(val) => setInspiration(val === null || val === undefined ? null : Math.max(0, Math.floor(val)))}
+            value={inspiration ?? null}
+            onValueChange={(val) => updateCharacter({ inspiration: val === null || val === undefined ? undefined : Math.max(0, Math.floor(val)) })}
             label="Insp."
             variant="outlined"
             fieldSize="tiny"
-            error={inspiration !== null && !isBlankOrZeroOrPositiveInt(inspiration)}
-            helperText={inspiration !== null && !isBlankOrZeroOrPositiveInt(inspiration) ? 'Must be blank, 0, or positive integer' : undefined}
+            error={inspiration !== undefined && !isBlankOrZeroOrPositiveInt(inspiration)}
+            helperText={inspiration !== undefined && !isBlankOrZeroOrPositiveInt(inspiration) ? 'Must be blank, 0, or positive integer' : undefined}
           />
         </div>
       </div>

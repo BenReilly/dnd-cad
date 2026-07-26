@@ -1,4 +1,4 @@
-import { useContext, useRef, useState, FormEvent } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState, FormEvent } from 'react';
 import { Button } from '@mui/material';
 import CharacterIdentityFields from './fields/CharacterIdentityFields';
 import CharacterRaceFields from './fields/CharacterRaceFields';
@@ -6,24 +6,30 @@ import CharacterClassFields from './fields/CharacterClassFields';
 import CharacterCombatStatsFields from './fields/CharacterCombatStatsFields';
 import CharacterTraitFields from './fields/CharacterTraitsFields';
 import { AttackFieldErrors } from './fields/CharacterAttackFields';
-import CharacterAbilitiesSection, {
-  CharacterAbilitiesSectionHandle,
-} from './fields/CharacterAbilitiesSection';
+import CharacterAbilitiesSection from './fields/CharacterAbilitiesSection';
 import CharSheetVerticalTabs from '../../library/tabs/CharSheetVerticalTabs';
 
 import {
   Abilities,
   Attack,
   BackgroundContextType,
-  Character,
   CharClassFormat,
   ClassDescription,
+  Character,
   HitDie,
   Race,
   RaceAndClassContextType,
   Skill,
   SkillsContextType,
 } from '../../../types/Characters.Types';
+import {
+  buildInitialSkills,
+  CharacterEntryState,
+  defaultAbilityValues,
+  defaultSavingThrows,
+  emptyAttack,
+  emptyHitDie,
+} from './charEntry.state';
 import { RaceClassContext } from '../../../contexts/racesAndClasses.context';
 import { BackgroundsContext, SkillsContext } from '../../../contexts/characterOptions.context.tsx';
 
@@ -45,13 +51,59 @@ const CharEntry = () => {
   const { Classes, Races } = useContext<RaceAndClassContextType>(RaceClassContext);
   const { Backgrounds } = useContext<BackgroundContextType>(BackgroundsContext);
   const { Skills } = useContext<SkillsContextType>(SkillsContext);
-  const skills: Skill[] = Skills ?? [];
+  const skills: Skill[] = useMemo(() => Skills ?? [], [Skills]);
   const charId = 'someIdHere';
   const user_doc = 'eje';
-  const [name, setName] = useState('');
+  const [character, setCharacter] = useState<CharacterEntryState>({
+    charId,
+    user_doc,
+    abilities: defaultAbilityValues(),
+    savingThrows: defaultSavingThrows(),
+    skills: buildInitialSkills(skills),
+    hitDice: [emptyHitDie()],
+    attacks: [emptyAttack()],
+    proficiencies: [],
+    languages: [],
+  });
+  const updateCharacter = useCallback((patch: Partial<CharacterEntryState>) => {
+    setCharacter((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  useEffect(() => {
+    if (skills.length === 0) {
+      return;
+    }
+
+    setCharacter((prev) => {
+      const existingSkillByKey = new Map(
+        (prev.skills ?? []).map((skill) => [skill.key, skill]),
+      );
+      const nextSkills = skills.map((skill) => {
+        const existingSkill = existingSkillByKey.get(skill.key);
+        return {
+          key: skill.key,
+          display: skill.display,
+          ability: skill.ability,
+          proficient: existingSkill?.proficient ?? false,
+          expertise: existingSkill?.expertise ?? false,
+        };
+      });
+      const currentSkills = prev.skills ?? [];
+      const skillsAreSame = currentSkills.length === nextSkills.length
+        && nextSkills.every((skill, index) => {
+          const currentSkill = currentSkills[index];
+          return currentSkill?.key === skill.key
+            && currentSkill.display === skill.display
+            && currentSkill.ability === skill.ability
+            && !!currentSkill.proficient === skill.proficient
+            && !!currentSkill.expertise === skill.expertise;
+        });
+
+      return skillsAreSame ? prev : { ...prev, skills: nextSkills };
+    });
+  }, [skills]);
   const [nameTouched, setNameTouched] = useState(false);
   const [nameError, setNameError] = useState('');
-  const [xp, setXp] = useState<number | null>(null);
   const [raceSelectionState, setRaceSelectionState] = useState('');
   // Custom setter for raceSelection to auto-set subraceSelection
   const setRaceSelection = (value: string) => {
@@ -69,78 +121,69 @@ const CharEntry = () => {
   const [classDescriptions, setClassDescriptions] = useState<
     ClassDescription[]
   >([emptyClassDescription()]);
-  const [background, setBackground] = useState('');
-  const [ac, setAc] = useState<number | null>(null);
-  const [initiative, setInitiative] = useState<number | null>(null);
-  const [speed, setSpeed] = useState<number | null>(null);
-  const [inspiration, setInspiration] = useState<number | null>(null);
   const [formError, setFormError] = useState('');
   const [attackFormError, setAttackFormError] = useState('');
-  const [abilities, setAbilities] = useState<{ [K in keyof Abilities]: number | null }>({
-    str: 10,
-    dex: 10,
-    con: 10,
-    int: 10,
-    wis: 10,
-    cha: 10,
-  });
+  const abilities = character.abilities ?? defaultAbilityValues();
   const [abilityErrors, setAbilityErrors] = useState<Record<string, boolean>>({});
   const [abilityFormError, setAbilityFormError] = useState('');
   const [activeTab, setActiveTab] = useState(0);
-  const abilitiesSectionRef = useRef<CharacterAbilitiesSectionHandle>(null);
+
+  // Derived values from character state
+  const name = character.name ?? '';
+  const xp = character.xp;
+  const background = character.background ?? '';
+  const ac = character.ac;
+  const initiative = character.initiative;
+  const speed = character.speed;
+  const inspiration = character.inspiration;
 
   // Hit Dice state
   const hitDieSizes = ['6', '8', '10', '12'];
   const attackDamageSizes = ['4', '6', '8', '10', '12', '20'];
-  const emptyHitDie = (): HitDie => ({ qty: 0, die: 0 });
-  const [hitDice, setHitDice] = useState<HitDie[]>([emptyHitDie()]);
-  const [hitDiceTouched, setHitDiceTouched] = useState<boolean[]>([false]);
-  const emptyAttack = (): Attack => ({
-    name: '',
-    attackBonus: null,
-    damage: '',
-    normalRange: null,
-    longRange: null,
-    type: '',
-  });
   const emptyAttackFieldErrors = (): AttackFieldErrors => ({
     name: false,
     attackBonus: false,
     damage: false,
     type: false,
   });
-  const [attacks, setAttacks] = useState<Attack[]>([emptyAttack()]);
+  const hitDice = character.hitDice ?? [emptyHitDie()];
+  const attacks = character.attacks ?? [emptyAttack()];
+  const [hitDiceTouched, setHitDiceTouched] = useState<boolean[]>([false]);
   const [attackFieldErrors, setAttackFieldErrors] = useState<AttackFieldErrors[]>([emptyAttackFieldErrors()]);
-  // const [racialTraits, setRacialTraits] = useState<Feature[]>([]);
-  // const [classFeatures, setClassFeatures] = useState<Feature[]>([]);
-  const [proficiencies, setProficiencies] = useState<string[]>([]);
-  const [languages, setLanguages] = useState<string[]>([]);
+
+  const updateHitDice = (updater: (prev: HitDie[]) => HitDie[]) => {
+    setCharacter((prev) => ({ ...prev, hitDice: updater(prev.hitDice ?? [emptyHitDie()]) }));
+  };
+  const updateAttacks = (updater: (prev: Attack[]) => Attack[]) => {
+    setCharacter((prev) => ({ ...prev, attacks: updater(prev.attacks ?? [emptyAttack()]) }));
+  };
+
   // Hit Dice handlers
   const handleHitDieQtyChange = (index: number, value: number | null) => {
-    setHitDice((prev) => prev.map((hd, i) => i === index ? { ...hd, qty: value ?? 0 } : hd));
+    updateHitDice((prev) => prev.map((hd, i) => i === index ? { ...hd, qty: value ?? 0 } : hd));
   };
   const handleHitDieDieChange = (index: number, value: string | null) => {
-    setHitDice((prev) => prev.map((hd, i) => i === index ? { ...hd, die: value ? parseInt(value) : 0 } : hd));
+    updateHitDice((prev) => prev.map((hd, i) => i === index ? { ...hd, die: value ? parseInt(value) : 0 } : hd));
   };
   const addHitDieRow = () => {
-    setHitDice((prev) => [...prev, emptyHitDie()]);
+    updateHitDice((prev) => [...prev, emptyHitDie()]);
     setHitDiceTouched((prev) => [...prev, false]);
   };
   const setHitDieTouched = (index: number) => {
     setHitDiceTouched((prev) => prev.map((t, i) => i === index ? true : t));
   };
   const handleAttackNameChange = (index: number, value: string) => {
-    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, name: value } : attack));
+    updateAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, name: value } : attack));
     setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, name: false } : fieldErrors));
     if (attackFormError) setAttackFormError('');
   };
   const handleAttackBonusChange = (index: number, value: number | null) => {
-    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, attackBonus: value } : attack));
+    updateAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, attackBonus: value } : attack));
     setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, attackBonus: false } : fieldErrors));
     if (attackFormError) setAttackFormError('');
   };
   const handleAttackTypeChange = (index: number, value: string) => {
-    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, type: value } : attack));
+    updateAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, type: value } : attack));
     setAttackFieldErrors((prev) => prev.map((fieldErrors, i) => i === index ? { ...fieldErrors, type: false } : fieldErrors));
     if (attackFormError) setAttackFormError('');
   };
@@ -154,12 +197,12 @@ const CharEntry = () => {
   };
   const handleAttackNormalRangeChange = (index: number, value: string) => {
     const parsedRange = toNullableNumber(value);
-    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, normalRange: parsedRange } : attack));
+    updateAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, normalRange: parsedRange } : attack));
     if (attackFormError) setAttackFormError('');
   };
   const handleAttackLongRangeChange = (index: number, value: string) => {
     const parsedRange = toNullableNumber(value);
-    setAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, longRange: parsedRange } : attack));
+    updateAttacks((prev) => prev.map((attack, i) => i === index ? { ...attack, longRange: parsedRange } : attack));
     if (attackFormError) setAttackFormError('');
   };
   const parseAttackDamage = (damage: string): { qty: number | null; size: string | null; mod: number | null } => {
@@ -211,7 +254,7 @@ const CharEntry = () => {
     return `${base}${parsed.mod < 1 ? '' : '+'}${parsed.mod}`;
   };
   const handleAttackDamageQtyChange = (index: number, value: number | null) => {
-    setAttacks((prev) => prev.map((attack, i) => {
+    updateAttacks((prev) => prev.map((attack, i) => {
       if (i !== index) {
         return attack;
       }
@@ -222,7 +265,7 @@ const CharEntry = () => {
     if (attackFormError) setAttackFormError('');
   };
   const handleAttackDamageSizeChange = (index: number, value: string | null) => {
-    setAttacks((prev) => prev.map((attack, i) => {
+    updateAttacks((prev) => prev.map((attack, i) => {
       if (i !== index) {
         return attack;
       }
@@ -233,7 +276,7 @@ const CharEntry = () => {
     if (attackFormError) setAttackFormError('');
   };
   const handleAttackDamageModChange = (index: number, value: number | null) => {
-    setAttacks((prev) => prev.map((attack, i) => {
+    updateAttacks((prev) => prev.map((attack, i) => {
       if (i !== index) {
         return attack;
       }
@@ -244,7 +287,7 @@ const CharEntry = () => {
     if (attackFormError) setAttackFormError('');
   };
   const addAttackRow = () => {
-    setAttacks((prev) => [...prev, emptyAttack()]);
+    updateAttacks((prev) => [...prev, emptyAttack()]);
     setAttackFieldErrors((prev) => [...prev, emptyAttackFieldErrors()]);
     if (attackFormError) setAttackFormError('');
   };
@@ -325,7 +368,8 @@ const CharEntry = () => {
   };
 
   const handleAbilityChange = (ability: keyof Abilities, value: number | null) => {
-    setAbilities((prev) => ({ ...prev, [ability]: value }));
+    const nextAbilities = { ...abilities, [ability]: value };
+    updateCharacter({ abilities: nextAbilities });
     setAbilityErrors((prev) => ({ ...prev, [ability]: false }));
     if (abilityFormError) {
       setAbilityFormError('');
@@ -482,22 +526,7 @@ const CharEntry = () => {
 
     setFormError('');
 
-    // Build a Character-like object with only valid (non-empty, non-undefined) fields
-    const character: Partial<Character> = {};
-    if (charId) character.charId = charId;
-    if (user_doc) character.user_doc = user_doc;
-    if (name && name.trim()) character.name = name.trim();
-    if (raceSelectionState && (raceSelectionState !== 'other' || otherRaceText.trim())) {
-      character.race = raceSelectionState === 'other' ? otherRaceText.trim() : raceSelectionState;
-    }
-    const subraceValue = subraceSelection === 'other' ? otherSubraceText.trim() : subraceSelection === 'none' ? undefined : subraceSelection || undefined;
-    if (subraceValue) character.subrace = subraceValue;
-    if (classArray && classArray.length > 0) {
-      character.class = classArray as unknown as Character['class'];
-    }
-    // Only attach hitDice with qty > 0 and die > 0
-    const filteredHitDice = validHitDice.filter(hd => hd.qty > 0 && hd.die > 0);
-    if (filteredHitDice.length > 0) character.hitDice = filteredHitDice;
+    // Build attacks with final formatting
     const builtAttacks = attacks.map((attack) => {
       const nameValue = attack.name.trim();
       const typeValue = attack.type.trim();
@@ -554,36 +583,41 @@ const CharEntry = () => {
     }
     setAttackFieldErrors(attacks.map(() => emptyAttackFieldErrors()));
     setAttackFormError('');
-    if (attackRowsWithInput.length > 0) character.attacks = attackRowsWithInput;
-    // if (racialTraits.length > 0) character.racialTraits = racialTraits;
-    // if (classFeatures.length > 0) character.classFeatures = classFeatures;
-    if (proficiencies.length > 0) character.proficiencies = proficiencies;
-    if (languages.length > 0) character.languages = languages;
-    if (background && background.trim()) character.background = background.trim();
-    if (typeof xp === 'number') character.xp = xp;
-    if (typeof ac === 'number') character.ac = ac;
-    if (typeof initiative === 'number') character.initiative = initiative;
-    if (typeof speed === 'number') character.speed = speed;
-    if (typeof inspiration === 'number') character.inspiration = inspiration;
-    if (abilityValidationResult && abilityValidationResult !== null) {
-      character.abilities = abilityValidationResult;
-    }
 
-    const saveStates = abilitiesSectionRef.current?.getSaveStates();
-    if (saveStates) {
-      character.savingThrows = saveStates;
-    }
+    // Build the submitted character from state with final transformations
+    const filteredHitDice = validHitDice.filter(hd => hd.qty > 0 && hd.die > 0);
+    const submittedCharacter: Partial<Character> = {
+      ...character,
+      name: name.trim() || undefined,
+      race: raceSelectionState === 'other'
+        ? otherRaceText.trim() || undefined
+        : raceSelectionState || undefined,
+      subrace: subraceSelection === 'other'
+        ? otherSubraceText.trim() || undefined
+        : subraceSelection === 'none'
+          ? undefined
+          : subraceSelection || undefined,
+      class: classArray.length > 0
+        ? classArray as unknown as Character['class']
+        : undefined,
+      hitDice: filteredHitDice.length > 0 ? filteredHitDice : undefined,
+      attacks: attackRowsWithInput.length > 0 ? attackRowsWithInput : undefined,
+      abilities: abilityValidationResult && abilityValidationResult !== null
+        ? abilityValidationResult
+        : undefined,
+      proficiencies: (character.proficiencies?.length ?? 0) > 0 ? character.proficiencies : undefined,
+      languages: (character.languages?.length ?? 0) > 0 ? character.languages : undefined,
+      background: background && background.trim() ? background.trim() : undefined,
+    };
 
-    const skillStates = abilitiesSectionRef.current?.getSkillStates() ?? {};
-    character.skills = skills.map((skill) => ({
-      key: skill.key,
-      display: skill.display,
-      ability: skill.ability,
-      proficient: skillStates[skill.key]?.proficient ?? false,
-      expertise: skillStates[skill.key]?.expertise ?? false,
-    }));
+    // Remove undefined fields
+    (Object.keys(submittedCharacter) as (keyof Character)[]).forEach((key) => {
+      if (submittedCharacter[key] === undefined) {
+        delete submittedCharacter[key];
+      }
+    });
 
-    // console.log(character);
+    console.log(submittedCharacter);
   };
 
   return (
@@ -623,15 +657,13 @@ const CharEntry = () => {
                 <>
                   <CharacterIdentityFields
                     name={name}
-                    setName={setName}
+                    xp={xp}
+                    background={background}
+                    updateCharacter={updateCharacter}
                     nameTouched={nameTouched}
                     setNameTouched={setNameTouched}
                     nameError={nameError}
                     setNameError={setNameError}
-                    xp={xp}
-                    setXp={setXp}
-                    background={background}
-                    setBackground={setBackground}
                     backgroundOptions={backgroundOptions}
                   />
 
@@ -673,14 +705,16 @@ const CharEntry = () => {
               content: (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <CharacterAbilitiesSection
-                    ref={abilitiesSectionRef}
                     abilities={abilities}
+                    savingThrows={character.savingThrows ?? defaultSavingThrows()}
+                    characterSkills={character.skills ?? []}
                     abilityModifiers={abilityModifiers}
                     onAbilityChange={handleAbilityChange}
                     skills={skills}
                     proficiencyBonus={proficiencyBonus}
                     abilityErrors={abilityErrors}
                     formError={abilityFormError}
+                    updateCharacter={updateCharacter}
                   />
                 </div>
               ),
@@ -690,21 +724,18 @@ const CharEntry = () => {
               content: (
                 <CharacterCombatStatsFields
                   ac={ac}
-                  setAc={setAc}
                   initiative={initiative}
-                  setInitiative={setInitiative}
                   speed={speed}
-                  setSpeed={setSpeed}
                   inspiration={inspiration}
-                  setInspiration={setInspiration}
                   hitDice={hitDice}
+                  attacks={attacks}
+                  updateCharacter={updateCharacter}
                   hitDiceTouched={hitDiceTouched}
                   handleHitDieQtyChange={handleHitDieQtyChange}
                   handleHitDieDieChange={handleHitDieDieChange}
                   addHitDieRow={addHitDieRow}
                   setHitDieTouched={setHitDieTouched}
                   hitDieSizes={hitDieSizes}
-                  attacks={attacks}
                   handleAttackNameChange={handleAttackNameChange}
                   handleAttackBonusChange={handleAttackBonusChange}
                   handleAttackTypeChange={handleAttackTypeChange}
@@ -728,10 +759,9 @@ const CharEntry = () => {
                 // classFeatures={classFeatures}
                 // setClassFeatures={setClassFeatures}
                 <CharacterTraitFields
-                  proficiencies={proficiencies}
-                  setProficiencies={setProficiencies}
-                  languages={languages}
-                  setLanguages={setLanguages}
+                  proficiencies={character.proficiencies ?? []}
+                  languages={character.languages ?? []}
+                  updateCharacter={updateCharacter}
                 />
               ),
             },

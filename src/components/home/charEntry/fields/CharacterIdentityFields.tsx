@@ -3,6 +3,7 @@ import CharSheetTextField from '../../../library/textField/CharSheetTextField';
 import CharSheetAutocomplete from '../../../library/select/CharSheetAutocomplete';
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
 import { characterFieldStyles } from './characterFieldStyles';
+import { CharacterEntryState } from '../charEntry.state';
 
 type Option = { value: string; label: string };
 
@@ -35,29 +36,25 @@ const findBestMatchingOption = (input: string, options: Option[]) => {
 
 export interface CharacterIdentityFieldsProps {
   name: string;
-  setName: (name: string) => void;
+  xp?: number;
+  background: string;
+  updateCharacter: (patch: Partial<CharacterEntryState>) => void;
   nameTouched: boolean;
   setNameTouched: (touched: boolean) => void;
   nameError: string;
   setNameError: (error: string) => void;
-  xp: number | null;
-  setXp: (xp: number | null) => void;
-  background: string;
-  setBackground: (background: string) => void;
   backgroundOptions: { value: string; label: string }[];
 }
 
 const CharacterIdentityFields = ({
   name,
-  setName,
+  xp,
+  background,
+  updateCharacter,
   nameTouched,
   setNameTouched,
   nameError,
   setNameError,
-  xp,
-  setXp,
-  background,
-  setBackground,
   backgroundOptions,
 }: CharacterIdentityFieldsProps) => {
   const selectedBackgroundOption =
@@ -71,13 +68,13 @@ const CharacterIdentityFields = ({
 
     const matchingOption = findBestMatchingOption(trimmedInput, backgroundOptions);
     if (matchingOption) {
-      setBackground(matchingOption.value);
+      updateCharacter({ background: matchingOption.value });
     }
   };
 
   const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
-    setName(value);
+    updateCharacter({ name: value });
     if (nameTouched) {
       if (!value.trim()) {
         setNameError('Name is required.');
@@ -108,14 +105,14 @@ const CharacterIdentityFields = ({
       </div>
       <div style={characterFieldStyles.fieldBlock}>
         <CharSheetNumberField
-          value={xp}
+          value={xp ?? null}
           onValueChange={(value) => {
             if (value === null || value === undefined) {
-              setXp(null);
+              updateCharacter({ xp: undefined });
               return;
             }
 
-            setXp(Math.max(0, Math.trunc(value)));
+            updateCharacter({ xp: Math.max(0, Math.trunc(value)) });
           }}
           label="Total XP"
           variant="outlined"
@@ -129,10 +126,10 @@ const CharacterIdentityFields = ({
         <CharSheetAutocomplete
           value={selectedBackgroundOption}
           inputValue={background}
-          onInputChange={(_, newInputValue) => setBackground(newInputValue)}
+          onInputChange={(_, newInputValue) => updateCharacter({ background: newInputValue })}
           onChange={(_, newValue) => {
             if (newValue) {
-              setBackground(typeof newValue === 'string' ? newValue : newValue.value);
+              updateCharacter({ background: typeof newValue === 'string' ? newValue : newValue.value });
             }
           }}
           onBlur={() => {

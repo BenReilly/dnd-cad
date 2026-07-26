@@ -25,6 +25,8 @@ describe('CharEntry integration', () => {
       </RaceClassContext.Provider>
     );
 
+    fireEvent.click(screen.getByRole('tab', { name: 'Abilities' }));
+
     // Find the Dexterity input by its name attribute and type 14
     const dexInput = container.querySelector('input[name="dex"]') as HTMLInputElement;
     await user.clear(dexInput);

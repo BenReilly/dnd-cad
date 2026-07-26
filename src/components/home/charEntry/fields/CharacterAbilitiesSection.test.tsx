@@ -1,10 +1,7 @@
-import { createRef } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
-import CharacterAbilitiesSection, {
-  CharacterAbilitiesSectionHandle,
-} from './CharacterAbilitiesSection';
+import { describe, expect, it, vi } from 'vitest';
+import CharacterAbilitiesSection from './CharacterAbilitiesSection';
 import { Skill } from '../../../../types/Characters.Types';
 
 const defaultAbilities = {
@@ -25,6 +22,19 @@ const defaultModifiers = {
   cha: 0,
 };
 
+const defaultCharacter = {
+  abilities: defaultAbilities,
+  savingThrows: {
+    str: false,
+    dex: false,
+    con: false,
+    int: false,
+    wis: false,
+    cha: false,
+  },
+  skills: [] as Skill[],
+};
+
 describe('CharacterAbilitiesSection', () => {
   it('renders all ability headings and routes ability score changes', () => {
     const onAbilityChange = vi.fn();
@@ -32,11 +42,14 @@ describe('CharacterAbilitiesSection', () => {
 
     const { container } = render(
       <CharacterAbilitiesSection
-        abilities={defaultAbilities}
+        abilities={defaultCharacter.abilities}
+        savingThrows={defaultCharacter.savingThrows}
+        characterSkills={defaultCharacter.skills}
         abilityModifiers={defaultModifiers}
         onAbilityChange={onAbilityChange}
         skills={skills}
         proficiencyBonus={2}
+        updateCharacter={() => {}}
       />,
     );
 
@@ -63,11 +76,14 @@ describe('CharacterAbilitiesSection', () => {
 
     const { container } = render(
       <CharacterAbilitiesSection
-        abilities={defaultAbilities}
+        abilities={defaultCharacter.abilities}
+        savingThrows={defaultCharacter.savingThrows}
+        characterSkills={defaultCharacter.skills}
         abilityModifiers={defaultModifiers}
         onAbilityChange={() => {}}
         skills={skills}
         proficiencyBonus={2}
+        updateCharacter={() => {}}
       />,
     );
 
@@ -88,21 +104,23 @@ describe('CharacterAbilitiesSection', () => {
     expect(dexInput).toBeInTheDocument();
   });
 
-  it('updates save and skill modifiers with proficiency and expertise, and exposes states by ref', async () => {
+  it('updates save and skill modifiers with proficiency and expertise, and syncs states via updateCharacter', async () => {
     const user = userEvent.setup();
     const skills: Skill[] = [
       { key: 'sleight', display: 'Sleight of Hand', ability: 'dex' },
     ];
-    const ref = createRef<CharacterAbilitiesSectionHandle>();
+    const updateCharacter = vi.fn();
 
     render(
       <CharacterAbilitiesSection
-        ref={ref}
-        abilities={defaultAbilities}
+        abilities={defaultCharacter.abilities}
+        savingThrows={defaultCharacter.savingThrows}
+        characterSkills={[{ key: 'sleight', display: 'Sleight of Hand', ability: 'dex', proficient: false, expertise: false }]}
         abilityModifiers={{ ...defaultModifiers, dex: 3 }}
         onAbilityChange={() => {}}
         skills={skills}
         proficiencyBonus={2}
+        updateCharacter={updateCharacter}
       />,
     );
 
@@ -132,21 +150,36 @@ describe('CharacterAbilitiesSection', () => {
 
     await user.click(skillProficiencyCheckbox);
 
-    const states = ref.current?.getSkillStates();
-    expect(states?.sleight).toEqual({ proficient: false, expertise: false });
+    // Verify that updateCharacter was called with skill state { proficient: false, expertise: false }
+    const skillCalls = updateCharacter.mock.calls.filter(
+      ([patch]) => 'skills' in patch,
+    );
+    const lastSkillCall = skillCalls[skillCalls.length - 1];
+    const sleightSkill = lastSkillCall?.[0]?.skills?.find(
+      (s: Skill) => s.key === 'sleight',
+    );
+    expect(sleightSkill).toEqual(
+      expect.objectContaining({ key: 'sleight', proficient: false, expertise: false }),
+    );
 
-    const saveStates = ref.current?.getSaveStates();
-    expect(saveStates?.dex).toBe(true);
+    // Verify that updateCharacter was called with savingThrows where dex is true
+    const saveCallWithDexTrue = updateCharacter.mock.calls.find(
+      ([patch]) => patch?.savingThrows?.dex === true,
+    );
+    expect(saveCallWithDexTrue).toBeDefined();
   });
 
   it('retains an accessible save label while hiding it visually', () => {
     render(
       <CharacterAbilitiesSection
-        abilities={defaultAbilities}
+        abilities={defaultCharacter.abilities}
+        savingThrows={defaultCharacter.savingThrows}
+        characterSkills={defaultCharacter.skills}
         abilityModifiers={defaultModifiers}
         onAbilityChange={() => {}}
         skills={[]}
         proficiencyBonus={2}
+        updateCharacter={() => {}}
       />,
     );
 
@@ -161,11 +194,14 @@ describe('CharacterAbilitiesSection', () => {
 
     render(
       <CharacterAbilitiesSection
-        abilities={defaultAbilities}
+        abilities={defaultCharacter.abilities}
+        savingThrows={defaultCharacter.savingThrows}
+        characterSkills={defaultCharacter.skills}
         abilityModifiers={{ ...defaultModifiers, str: 2 }}
         onAbilityChange={() => {}}
         skills={skills}
         proficiencyBonus={2}
+        updateCharacter={() => {}}
       />,
     );
 
@@ -186,11 +222,14 @@ describe('CharacterAbilitiesSection', () => {
 
     render(
       <CharacterAbilitiesSection
-        abilities={defaultAbilities}
+        abilities={defaultCharacter.abilities}
+        savingThrows={defaultCharacter.savingThrows}
+        characterSkills={defaultCharacter.skills}
         abilityModifiers={{ ...defaultModifiers, str: 2 }}
         onAbilityChange={() => {}}
         skills={skills}
         proficiencyBonus={2}
+        updateCharacter={() => {}}
       />,
     );
 

@@ -110,7 +110,7 @@ const CharSheetVerticalTabs = ({
               padding: value === index ? '12px' : 0,
             }}
           >
-            {tab.content}
+            {value === index ? tab.content : null}
           </div>
         ))}
       </Box>

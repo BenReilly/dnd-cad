@@ -5,8 +5,8 @@ interface CharSheetListFieldProps
   extends Omit<TextFieldProps, 'error' | 'onChange' | 'value'> {
   fieldSize?: 'full' | 'large' | 'medium' | 'small' | 'tiny';
   addButtonLabel?: string;
-  defaultItems?: string[];
-  onItemsChange?: (items: string[]) => void;
+  items?: string[];
+  onItemsChange: (items: string[]) => void;
 }
 
 const sizeMap = {
@@ -32,7 +32,7 @@ const splitCommaSeparatedValues = (value: string) => {
 const CharSheetListField: React.FC<CharSheetListFieldProps> = ({
   fieldSize = 'medium',
   addButtonLabel = 'Add',
-  defaultItems = [],
+  items = [],
   onItemsChange,
   label,
   helperText,
@@ -41,7 +41,6 @@ const CharSheetListField: React.FC<CharSheetListFieldProps> = ({
   const width = useMemo(() => sizeMap[fieldSize], [fieldSize]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [inputValue, setInputValue] = useState('');
-  const [items, setItems] = useState(defaultItems);
   const [hasError, setHasError] = useState(false);
 
   const pushItems = (value: string) => {
@@ -50,11 +49,8 @@ const CharSheetListField: React.FC<CharSheetListFieldProps> = ({
       return;
     }
 
-    setItems((currentItems) => {
-      const updatedItems = [...currentItems, ...nextItems];
-      onItemsChange?.(updatedItems);
-      return updatedItems;
-    });
+    const updatedItems = [...items, ...nextItems];
+    onItemsChange(updatedItems);
     setInputValue('');
     setHasError(false);
     inputRef.current?.focus();
@@ -168,11 +164,8 @@ const CharSheetListField: React.FC<CharSheetListFieldProps> = ({
             label={item}
             variant="outlined"
             onDelete={() => {
-              setItems((current) => {
-                const updated = current.filter((_, i) => i !== index);
-                onItemsChange?.(updated);
-                return updated;
-              });
+              const updated = items.filter((_, i) => i !== index);
+              onItemsChange(updated);
             }}
             sx={{
               fontFamily: '"Quintessential", serif',

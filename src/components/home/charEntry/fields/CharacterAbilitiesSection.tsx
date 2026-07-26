@@ -1,8 +1,9 @@
-import { CSSProperties, forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import AbilityField from './AbilityField';
 import CharSheetCheckboxes from '../../../library/checkboxes/CharSheetCheckboxes';
 import CharSheetNumberField from '../../../library/numberField/CharSheetNumberField';
-import { Abilities, Skill } from '../../../../types/Characters.Types';
+import { Abilities, SavingThrows, Skill } from '../../../../types/Characters.Types';
+import { CharacterEntryState } from '../charEntry.state';
 import {
   ABILITY_LABELS,
   ABILITY_ORDER,
@@ -19,18 +20,15 @@ import { borderlessModifierSx } from './characterFieldStyles';
 
 interface CharacterAbilitiesSectionProps {
   abilities: AbilityValues;
+  savingThrows: SavingThrows;
+  characterSkills: Skill[];
   abilityModifiers: AbilityValues;
   onAbilityChange: (ability: keyof Abilities, value: number | null) => void;
   skills: Skill[];
   proficiencyBonus: number;
   abilityErrors?: Record<string, boolean>;
   formError?: string;
-  savingThrows?: Partial<Record<keyof Abilities, boolean>>;
-}
-
-export interface CharacterAbilitiesSectionHandle {
-  getSaveStates: () => Record<keyof Abilities, boolean>;
-  getSkillStates: () => Record<string, { proficient: boolean; expertise: boolean }>;
+  updateCharacter: (patch: Partial<CharacterEntryState>) => void;
 }
 
 const styles: Record<string, CSSProperties> = {
@@ -117,62 +115,61 @@ const disabledModifierSlotProps = {
   },
 };
 
-const CharacterAbilitiesSection = forwardRef<
-  CharacterAbilitiesSectionHandle,
-  CharacterAbilitiesSectionProps
->(({
+const CharacterAbilitiesSection = ({
   abilities,
+  savingThrows,
+  characterSkills,
   abilityModifiers,
   onAbilityChange,
   skills,
   proficiencyBonus,
   abilityErrors = {},
   formError = '',
-  savingThrows,
-}, ref) => {
+  updateCharacter,
+}: CharacterAbilitiesSectionProps) => {
   const groupedSkills = useMemo(() => groupSkillsByAbility(skills), [skills]);
   const skillLabelMinWidth = '12ch';
 
-  const [saveValues, setSaveValues] = useState<Record<string, boolean>>(() => {
+  const derivedSaveValues = useMemo(() => {
     const out: Record<string, boolean> = {};
     ABILITY_ORDER.forEach((ability) => {
       out[getSaveCheckboxKey(ability)] = !!savingThrows?.[ability];
     });
     return out;
-  });
+  }, [savingThrows]);
 
-  const [skillValues, setSkillValues] = useState<Record<string, boolean>>(() => {
+  const derivedSkillValues = useMemo(() => {
     const out: Record<string, boolean> = {};
     skills.forEach((skill) => {
-      out[getSkillProficientKey(skill.key)] = !!skill.proficient;
-      out[getSkillExpertiseKey(skill.key)] = !!skill.expertise;
+      const stored = characterSkills.find((entry) => entry.key === skill.key);
+      out[getSkillProficientKey(skill.key)] = !!stored?.proficient;
+      out[getSkillExpertiseKey(skill.key)] = !!stored?.expertise;
     });
     return out;
-  });
+  }, [characterSkills, skills]);
+
+  const [localSaveValues, setLocalSaveValues] = useState<Record<string, boolean> | null>(null);
+  const [localSkillValues, setLocalSkillValues] = useState<Record<string, boolean> | null>(null);
+  const saveValues = localSaveValues ?? derivedSaveValues;
+  const skillValues = localSkillValues ?? derivedSkillValues;
   const previousSkillValuesRef = useRef<Record<string, boolean>>(skillValues);
 
-  useImperativeHandle(ref, () => ({
-    getSaveStates: () => {
-      const saveStates = {} as Record<keyof Abilities, boolean>;
-      ABILITY_ORDER.forEach((ability) => {
-        saveStates[ability] = saveValues[getSaveCheckboxKey(ability)] ?? !!savingThrows?.[ability];
-      });
-      return saveStates;
-    },
-    getSkillStates: () => {
-      const skillStates: Record<string, { proficient: boolean; expertise: boolean }> = {};
-      skills.forEach((skill) => {
-        skillStates[skill.key] = {
-          proficient: skillValues[getSkillProficientKey(skill.key)] ?? !!skill.proficient,
-          expertise: skillValues[getSkillExpertiseKey(skill.key)] ?? !!skill.expertise,
-        };
-      });
-      return skillStates;
-    },
-  }), [saveValues, savingThrows, skillValues, skills]);
+  useEffect(() => {
+    setLocalSaveValues(null);
+  }, [derivedSaveValues]);
+
+  useEffect(() => {
+    setLocalSkillValues(null);
+    previousSkillValuesRef.current = derivedSkillValues;
+  }, [derivedSkillValues]);
 
   const handleSaveChange = (newValues: Record<string, boolean>) => {
-    setSaveValues(newValues);
+    const saveStates = {} as SavingThrows;
+    ABILITY_ORDER.forEach((ability) => {
+      saveStates[ability] = newValues[getSaveCheckboxKey(ability)] ?? false;
+    });
+    setLocalSaveValues(newValues);
+    updateCharacter({ savingThrows: saveStates });
   };
 
   const handleSkillChange = (newValues: Record<string, boolean>) => {
@@ -183,7 +180,15 @@ const CharacterAbilitiesSection = forwardRef<
     );
 
     previousSkillValuesRef.current = constrainedValues;
-    setSkillValues(constrainedValues);
+    setLocalSkillValues(constrainedValues);
+    const updatedSkills: Skill[] = skills.map((skill) => ({
+      key: skill.key,
+      display: skill.display,
+      ability: skill.ability,
+      proficient: constrainedValues[getSkillProficientKey(skill.key)] ?? false,
+      expertise: constrainedValues[getSkillExpertiseKey(skill.key)] ?? false,
+    }));
+    updateCharacter({ skills: updatedSkills });
   };
 
   return (
@@ -272,9 +277,9 @@ const CharacterAbilitiesSection = forwardRef<
                   ) : (
                     skillsForAbility.map((skill) => {
                       const proficient =
-                        skillValues[getSkillProficientKey(skill.key)] ?? !!skill.proficient;
+                        skillValues[getSkillProficientKey(skill.key)] ?? false;
                       const expertise =
-                        skillValues[getSkillExpertiseKey(skill.key)] ?? !!skill.expertise;
+                        skillValues[getSkillExpertiseKey(skill.key)] ?? false;
                       const displayedSkillModifier = getSkillModifier(
                         abilityModifiers[ability],
                         proficient,
@@ -341,8 +346,6 @@ const CharacterAbilitiesSection = forwardRef<
       ) : null}
     </div>
   );
-});
-
-CharacterAbilitiesSection.displayName = 'CharacterAbilitiesSection';
+};
 
 export default CharacterAbilitiesSection;

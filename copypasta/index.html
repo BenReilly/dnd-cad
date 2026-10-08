@@ -44,7 +44,7 @@
       const copyalts = document.querySelectorAll('.copyalts');
       copyalts.forEach((thisNode) => {
         thisNode.addEventListener('click', (e) => {
-          navigator.clipboard.writeText(e.target.alt)
+          navigator.clipboard.writeText(e.target.attributes.alt.value)
         });
       });
     </script>

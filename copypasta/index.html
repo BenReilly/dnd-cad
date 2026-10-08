@@ -23,8 +23,14 @@
     <div class="flexContainer">
       <span class="copytext">¯\_(ツ)_/¯</span>
       <span class="copytext">(╯°□°）╯︵ ┻━┻</span>
-      <span class="copytext">
-        {{Respond out of character as an omniscient narrator:
+      <span class="copytext">┬─┬ノ( º _ ºノ)</span>
+      <span
+        class="copyalts"
+        alt="{{Respond out of character as an omniscient narrator:"
+      >
+        Omnnicient OOC
+      </span>
+        
       </span>
     </div>
     <script>
@@ -33,6 +39,12 @@
         thisNode.addEventListener('click', (e) => {
           console.log('copytext');
           navigator.clipboard.writeText(e.target.innerText);
+        });
+      });
+      const copyalts = document.querySelectorAll('.copyalts');
+      copyalts.forEach((thisNode) => {
+        thisNode.addEventListener('click', (e) => {
+          navigator.clipboard.writeText(e.target.alt)
         });
       });
     </script>
